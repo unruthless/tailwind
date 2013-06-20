@@ -1,7 +1,8 @@
 var map,
-    polyline       = {},
     mapOptions     = {},
+    polyline       = {},
     path           = [],
+    segments       = [],
     markers        = [],
     service        = new google.maps.DirectionsService(),
     ERROR_STATUSES = [
@@ -43,15 +44,19 @@ var map,
     ];
 
 /**
- * startRoute()
+ * ROUTE METHODS
+ * {method} createRoute
+ * {method} destroyRoute
+ * {method} extendRoute
+ * {method} curtailRoute
  */
 
-function startRoute(event) {
+function createRoute(event) {
 
-    console.log('== startRoute() ==');
+    console.log('== CREATE ROUTE ==');
 
     var location = event.latLng,
-        origin   = _addMarker(location);
+        origin   = _createMarker(location);
 
     // Set the clicked location, the path's origin, to be the first point.
     path.push(location);
@@ -61,13 +66,24 @@ function startRoute(event) {
     polyline.setPath(path);
 }
 
-/**
- * extendRoute()
- */
+function destroyRoute() {
+
+    console.log('== DESTROY ROUTE ==');
+
+    if (polyline.setPath !== undefined) {
+        path = [];
+        polyline.setPath(path);
+    }
+
+    // Remove the markers and underlying marker data.
+    for (var i = markers.length - 1; i >= 0; i--) {
+        _destroyMarker(i);
+    }
+}
 
 function extendRoute(event) {
 
-    console.log('== extendRoute() ==');
+    console.log('== EXTEND ROUTE ==');
 
     // Calculate directions between the previous point and the current point.
     service.route({
@@ -82,7 +98,7 @@ function extendRoute(event) {
 
         if (status === "OK") {
 
-            _addPoint(result);
+            _addSegment(result);
 
         } else {
 
@@ -96,63 +112,84 @@ function extendRoute(event) {
     });
 }
 
-/**
- * resetRoute()
- */
+function curtailRoute(event) {
 
-function resetRoute() {
+    console.log('== CURTAIL ROUTE ==');
 
-    console.log('== resetRoute() ==');
-
-    // Remove the path data, then redraw polyline, which erases it.
-    if (polyline.setPath !== 'undefined') {
-        path = [];
-        polyline.setPath(path);
-    }
-
-    // Remove the markers and underlying marker data.
-    for (var i = markers.length - 1; i >= 0; i--) {
-        _removeMarker(i);
-    }
+    _removeSegment();
 }
 
 /**
- * _addPoint()
+ * SEGMENT METHODS
+ * {method} _addSegment
+ * {method} _removeSegment
  */
 
-function _addPoint(result) {
+function _addSegment(result) {
 
-    console.log('== _addPoint() ==');
+    console.log('== _addSegment() ==');
 
-    // If the path contains more than one point, remove the marker from the old last point.
+    var segment = result.routes[0].overview_path        || [],
+        seg_pts = result.routes[0].overview_path.length || 0;
+
+    // If the path contains more than one point, erase the old final point's marker.
     if (path.length > 1) {
-        _removeMarker(markers.length - 1);
+        _eraseMarker(markers.length - 1);
     }
 
-    // Add the point to the path array.
-    path = path.concat(result.routes[0].overview_path);
+    segments.push(seg_pts);
 
-    // Place a marker at the new last point.
-    _addMarker(path[path.length - 1]);
+    // Add this segment's points to the path array.
+    path = path.concat(segment);
 
-    // Draw the path.
+    // Place a marker at the new final point.
+    _createMarker(path[path.length - 1]);
+
+    // Redraw the path.
     polyline.setPath(path);
 }
 
+function _removeSegment() {
+
+    console.log('== _removeSegment() ==');
+ 
+    var pointsToRemove = segments[segments.length - 1];
+
+    // If no segments to remove, reset the route.
+    if (segments.length === 0) {
+
+        destroyRoute();
+
+    } else {
+
+        // Destroy the last marker in the marker's array
+        _destroyMarker(markers.length - 1);
+
+        // Remove the last (segment's number of) items from the path array
+        path.splice(-pointsToRemove, pointsToRemove);
+
+        // Draw the marker at the new last point.
+        _drawMarker(markers.length - 1);
+
+        // Redraw the path.
+        polyline.setPath(path);
+
+        // Remove the last item in the segment array.
+        segments.splice(-1, 1);
+    }
+}
+
 /**
- *
+ * MARKER METHODS
+ * {method} _createMarker
+ * {method} _destroyMarker
+ * {method} _drawMarker
+ * {method} _eraseMarker
  */
- function _removePoint() {
-    console.log('== _removePoint() ==');
- }
 
+function _createMarker(location) {
 
-/**
- * _addMarker()
- */
-function _addMarker(location) {
-
-    console.log('== _addMarker() ==');
+    console.log('== _createMarker() ==');
 
     // Draw a marker at the provided location.
     var marker = new google.maps.Marker({
@@ -163,23 +200,38 @@ function _addMarker(location) {
     markers.push(marker);
 }
 
-/**
- * _removeMarker()
- */
+function _destroyMarker(index) {
 
-function _removeMarker(index) {
-
-    console.log('== _removeMarker() ==');
+    console.log('== _destroyMarker() ==');
 
     // Erase this marker from the map.
-    markers[index].setMap();
+    _eraseMarker(index);
+
+    console.log('how many markers?',markers.length);
 
     // Remove this marker's data from the markers array.
     markers.splice(index, 1);
+
+    console.log('how many markers?',markers.length);
 }
 
+function _drawMarker(index) {
+
+    console.log('== _drawMarker() ==');
+
+    markers[index].setMap(map);
+}
+
+function _eraseMarker(index) {
+
+    console.log('== _eraseMarker() ==');
+
+    markers[index].setMap();
+}
+
+
 /**
- * throwError()
+ * ERROR METHOD
  */
 
 function throwError(status, result) {
@@ -198,7 +250,7 @@ function throwError(status, result) {
 
 function init() {
 
-    console.log('== init() ==');
+    console.log('== INIT ==');
 
     // Set map options
     mapOptions = {
@@ -217,7 +269,7 @@ function init() {
     google.maps.event.addListener(map, "click", function(event) {
 
         if (path.length == 0) {
-            startRoute(event);
+            createRoute(event);
         } else {
             extendRoute(event);
         }
@@ -236,15 +288,14 @@ function controls() {
         $undoBtn  = $('#control-undo');
 
     $resetBtn.on('click', function(event) {
-        resetRoute();
+        destroyRoute();
     });
 
     $undoBtn.on('click', function(event) {
-        console.log('undo button clicked');
+        curtailRoute();
     });
 
 }
-
 
 // Kickoff
 google.maps.event.addDomListener(window, 'load', init);
