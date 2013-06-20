@@ -127,7 +127,7 @@ function curtailRoute(event) {
 
 function _addSegment(result) {
 
-    console.log('== _addSegment() ==');
+    // console.log('== _addSegment() ==');
 
     var segment = result.routes[0].overview_path        || [],
         seg_pts = result.routes[0].overview_path.length || 0;
@@ -151,7 +151,7 @@ function _addSegment(result) {
 
 function _removeSegment() {
 
-    console.log('== _removeSegment() ==');
+    // console.log('== _removeSegment() ==');
  
     var pointsToRemove = segments[segments.length - 1];
 
@@ -189,7 +189,7 @@ function _removeSegment() {
 
 function _createMarker(location) {
 
-    console.log('== _createMarker() ==');
+    // console.log('== _createMarker() ==');
 
     // Draw a marker at the provided location.
     var marker = new google.maps.Marker({
@@ -202,29 +202,25 @@ function _createMarker(location) {
 
 function _destroyMarker(index) {
 
-    console.log('== _destroyMarker() ==');
+    // console.log('== _destroyMarker() ==');
 
     // Erase this marker from the map.
     _eraseMarker(index);
 
-    console.log('how many markers?',markers.length);
-
     // Remove this marker's data from the markers array.
     markers.splice(index, 1);
-
-    console.log('how many markers?',markers.length);
 }
 
 function _drawMarker(index) {
 
-    console.log('== _drawMarker() ==');
+    // console.log('== _drawMarker() ==');
 
     markers[index].setMap(map);
 }
 
 function _eraseMarker(index) {
 
-    console.log('== _eraseMarker() ==');
+    // console.log('== _eraseMarker() ==');
 
     markers[index].setMap();
 }
