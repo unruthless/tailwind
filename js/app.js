@@ -1,8 +1,10 @@
 var map,
     MAP_NODE           = $("#canvas").get(0),
+    $resetBtn          = $('#control-reset'),
+    $undoBtn           = $('#control-undo'),
     mapOptions         = {
-            zoom:           14,
-            mapTypeId:      google.maps.MapTypeId.TERRAIN,
+            zoom: 13,
+            mapTypeId: google.maps.MapTypeId.TERRAIN,
             mapTypeControl: true,
             mapTypeControlOptions: {
                 style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
@@ -18,9 +20,10 @@ var map,
             }
         },
     polyline           = {},
-    path               = [],
-    segments           = [],
-    markers            = [],
+    path               = [], // cache points
+    segments           = [], // cache calculated segments
+    directions         = [], // cache calculated directions
+    markers            = [], // cache point marker objects
     TRAVEL_MODE        = google.maps.DirectionsTravelMode.BICYCLING,
     UNIT_SYSTEM        = google.maps.UnitSystem.IMPERIAL,
     AVOID_HIGHWAYS     = true,
@@ -73,12 +76,17 @@ var map,
  * {method} curtailRoute
  */
 
-function createRoute(event) {
+function createRoute(location) {
 
     console.log('== CREATE ROUTE ==');
 
-    var location = event.latLng,
-        origin   = _createMarker(location);
+    // Argument sanity check.
+    if (!location || typeof(location) !== 'object') {
+        console.log('[DayTrip] Error: Invalid location passed to createRoute()');
+        return;
+    }
+
+    var origin = _createMarker(location);
 
     // Set the clicked location, the path's origin, to be the first point.
     path.push(location);
@@ -92,10 +100,15 @@ function destroyRoute() {
 
     console.log('== DESTROY ROUTE ==');
 
-    if (polyline.setPath !== undefined) {
-        path = [];
-        polyline.setPath(path);
+    // If the user clicks Reset button before creating the route
+    if (polyline.setPath === undefined) {
+        console.log('[DayTrip] Error: unable to destroy route that doesn\'t exist.');
+        return;
     }
+
+    // Empty all points from path, then erase the polyline.
+    path = [];
+    polyline.setPath(path);
 
     // Remove the markers and underlying marker data.
     for (var i = markers.length - 1; i >= 0; i--) {
@@ -103,16 +116,22 @@ function destroyRoute() {
     }
 }
 
-function extendRoute(event) {
+function extendRoute(location) {
 
     console.log('== EXTEND ROUTE ==');
+
+    // Argument sanity check.
+    if (!location || typeof(location) !== 'object') {
+        console.log('[DayTrip] Error: Invalid location passed to extendRoute()');
+        return;
+    }
 
     // Calculate directions between the previous point and the current point.
     DIRECTIONS_SERVICE.route({
 
         origin:                   path[path.length - 1],
 
-        destination:              event.latLng,
+        destination:              location,
 
         travelMode:               TRAVEL_MODE,
 
@@ -144,13 +163,12 @@ function extendRoute(event) {
     });
 }
 
-function curtailRoute(event) {
+function curtailRoute() {
 
     console.log('== CURTAIL ROUTE ==');
 
     _removeSegment();
 }
-
 
 /**
  * DIRECTIONS METHODS
@@ -220,25 +238,26 @@ function getDirections() {
 
 function _displayDirections(result) {
 
-    console.log('== _displayDirections() ==');
-
-    console.log(result);
+    // Argument sanity check.
+    if (!result || typeof(result) !== 'object') {
+        console.log('[DayTrip] Error: Invalid result passed to _displayDirections()');
+        return;
+    }
 
     // Assumptions: only one route, only one leg.
-    var leg   = result.routes[0].legs[0],
-        steps = leg['steps'] || [],
-        origin = leg['start_address'],
-        destination = leg['end_address'],
+    var leg           = result.routes[0].legs[0],
+        steps         = leg['steps'] || [],
+        origin        = leg['start_address'],
+        destination   = leg['end_address'],
         totalDistance = leg['distance']['text'],
         totalDuration = leg['duration']['text'],
-        stepsHTML = '';
+        stepsHTML     = '';
 
     stepsHTML = '<ol>';
     for (var s = 0, slen = steps.length; s < slen; s++) {
         stepsHTML += '<li>' + steps[s]['instructions'] + ' (' + steps[s]['distance']['text'] + ')</li>';
     }
     stepsHTML += '</ol>';
-
 
     $('#origin').text('From ' + origin);
     $('#destination').text('To ' + destination);
@@ -255,7 +274,11 @@ function _displayDirections(result) {
 
 function _addSegment(result) {
 
-    // console.log('== _addSegment() ==');
+    // Argument sanity check.
+    if (!result || typeof(result) !== 'object') {
+        console.log('[DayTrip] Error: Invalid result passed to _addSegment()');
+        return;
+    }
 
     var segment = result.routes[0].overview_path        || [],
         seg_pts = result.routes[0].overview_path.length || 0;
@@ -317,7 +340,11 @@ function _removeSegment() {
 
 function _createMarker(location) {
 
-    // console.log('== _createMarker() ==');
+    // Argument sanity check.
+    if (!location || typeof(location) !== 'object') {
+        console.log('[DayTrip] Error: Invalid location passed to _createMarker()');
+        return;
+    }
 
     // Draw a marker at the provided location.
     var marker = new google.maps.Marker({
@@ -325,12 +352,17 @@ function _createMarker(location) {
             map: map
         });
 
+    // Append this marker to the markers array.
     markers.push(marker);
 }
 
 function _destroyMarker(index) {
 
-    // console.log('== _destroyMarker() ==');
+    // Argument sanity check.
+    if (!index || typeof(index) !== 'number' || markers[index] === undefined) {
+        console.log('[DayTrip] Error: Invalid index passed to _destroyMarker()');
+        return;
+    }
 
     // Erase this marker from the map.
     _eraseMarker(index);
@@ -341,15 +373,25 @@ function _destroyMarker(index) {
 
 function _drawMarker(index) {
 
-    // console.log('== _drawMarker() ==');
+    // Argument sanity check.
+    if (!index || typeof(index) !== 'number' || markers[index] === undefined) {
+        console.log('[DayTrip] Error: Invalid index passed to _drawMarker()');
+        return;
+    }
 
+    // Draw this marker on the map.
     markers[index].setMap(map);
 }
 
 function _eraseMarker(index) {
 
-    // console.log('== _eraseMarker() ==');
+    // Argument sanity check.
+    if (!index || typeof(index) !== 'number' || markers[index] === undefined) {
+        console.log('[DayTrip] Error: Invalid index passed to _eraseMarker()');
+        return;
+    }
 
+    // Erase this marker from the map.
     markers[index].setMap();
 }
 
@@ -382,30 +424,6 @@ function init() {
     map = new google.maps.Map(MAP_NODE, mapOptions);
 
     // Kick off controls
-    controlPanel();
-
-    // On click
-    google.maps.event.addListener(map, "click", function(event) {
-
-        if (path.length == 0) {
-            createRoute(event);
-        } else {
-            extendRoute(event);
-        }
-
-    });
-}
-
-
-/**
- * controls()
- */
-
-function controlPanel() {
-
-    var $resetBtn = $('#control-reset'),
-        $undoBtn  = $('#control-undo');
-
     $resetBtn.on('click', function(event) {
         destroyRoute();
     });
@@ -414,12 +432,18 @@ function controlPanel() {
         curtailRoute();
     });
 
-}
+    // On click
+    google.maps.event.addListener(map, "click", function(event) {
 
-function infoPanel(){
+        var location = event.latLng || '';
 
+        if (path.length == 0) {
+            createRoute(location);
+        } else {
+            extendRoute(location);
+        }
 
-
+    });
 }
 
 // Kickoff
