@@ -4,13 +4,34 @@
         <meta charset="utf-8">
         <title>DayTrip</title>
         <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+        <link rel="stylesheet" href="css/normalize.css">
         <link rel="stylesheet" href="css/style.css">
     </head>
     <body>
-        <div id="map-canvas"></div>
-        <div id="map-controls">
-            <button class="map-control" id="control-undo">Undo last step</button>
-            <button class="map-control" id="control-reset">Reset</button>
+        <div id="canvas"></div>
+        <div id="panels">
+            <div class="panel controls">
+                <button class="control" id="control-undo">Undo last step</button>
+                <button class="control" id="control-reset">Reset</button>
+            </div>
+            <div class="panel route">
+                <h3 class="panel-heading">Route</h3>
+                <p>From <span id="origin"></span> to <span id="destination"></span></p>
+                <p>Total: <span id="totalDistance"></span>, <span id="totalDuration"></span></p>
+                <div id="directions"></div>
+            </div>
+            <div class="panel elevation">
+                <h3 class="panel-heading">Profile</h3>
+                <p>@todo</p>
+            </div>
+            <div class="panel services">
+                <h3 class="panel-heading">Services</h3>
+                <p>@todo</p>
+            </div>
+            <div class="panel weather">
+                <h3 class="panel-heading">Weather</h3>
+                <p>@todo</p>
+            </div>
         </div>
         <script type="text/javascript" src="js/zepto.min.js"></script>
         <script type="text/javascript" src="js/underscore.min.js"></script>

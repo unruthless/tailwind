@@ -1,4 +1,5 @@
 var map,
+    MAP_NODE           = $("#canvas").get(0),
     mapOptions         = {},
     polyline           = {},
     path               = [],
@@ -205,18 +206,29 @@ function _displayDirections(result) {
 
     console.log('== _displayDirections() ==');
 
+    console.log(result);
+
     // Assumptions: only one route, only one leg.
     var leg   = result.routes[0].legs[0],
         steps = leg['steps'] || [],
+        origin = leg['start_address'],
+        destination = leg['end_address'],
         totalDistance = leg['distance']['text'],
-        totalDuration = leg['duration']['text'];
+        totalDuration = leg['duration']['text'],
+        stepsHTML = '';
 
-    console.log('Total distance',totalDistance);
-    console.log('Estimated duration',totalDuration);
-
+    stepsHTML = '<ol>';
     for (var s = 0, slen = steps.length; s < slen; s++) {
-        console.log(s + 1,steps[s]['instructions'],steps[s]['distance']['text']);
+        stepsHTML += '<li>' + steps[s]['instructions'] + ' (' + steps[s]['distance']['text'] + ')</li>';
     }
+    stepsHTML += '</ol>';
+
+
+    $('#origin').text(origin);
+    $('#destination').text(destination);
+    $('#totalDistance').text(totalDistance);
+    $('#totalDuration').text(totalDuration);
+    $('#directions').html(stepsHTML);
 }
 
 
@@ -356,10 +368,10 @@ function init() {
     };
 
     // Assign map to HTML element
-    map = new google.maps.Map(document.getElementById("map-canvas"), mapOptions);
+    map = new google.maps.Map(MAP_NODE, mapOptions);
 
     // Kick off controls
-    controls();
+    controlPanel();
 
     // On click
     google.maps.event.addListener(map, "click", function(event) {
@@ -378,7 +390,7 @@ function init() {
  * controls()
  */
 
-function controls() {
+function controlPanel() {
 
     var $resetBtn = $('#control-reset'),
         $undoBtn  = $('#control-undo');
@@ -390,6 +402,12 @@ function controls() {
     $undoBtn.on('click', function(event) {
         curtailRoute();
     });
+
+}
+
+function infoPanel(){
+
+
 
 }
 
