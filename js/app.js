@@ -1,11 +1,16 @@
 var map,
-    mapOptions     = {},
-    polyline       = {},
-    path           = [],
-    segments       = [],
-    markers        = [],
-    service        = new google.maps.DirectionsService(),
-    ERROR_STATUSES = [
+    mapOptions         = {},
+    polyline           = {},
+    path               = [],
+    segments           = [],
+    markers            = [],
+    TRAVEL_MODE        = google.maps.DirectionsTravelMode.BICYCLING,
+    UNIT_SYSTEM        = google.maps.UnitSystem.IMPERIAL,
+    AVOID_HIGHWAYS     = true,
+    OPTIMIZE_WAYPOINTS = false,
+    PROVIDE_ROUTE_ALTERNATIVES = false,
+    DIRECTIONS_SERVICE = new google.maps.DirectionsService(),
+    ERROR_STATUSES     = [
         {
             constant    : "INVALID_REQUEST",
             description : "The DirectionsRequest provided was invalid.",
@@ -86,19 +91,29 @@ function extendRoute(event) {
     console.log('== EXTEND ROUTE ==');
 
     // Calculate directions between the previous point and the current point.
-    service.route({
+    DIRECTIONS_SERVICE.route({
 
-        origin:      path[path.length - 1],
+        origin:                   path[path.length - 1],
 
-        destination: event.latLng,
+        destination:              event.latLng,
 
-        travelMode:  google.maps.DirectionsTravelMode.BICYCLING
+        travelMode:               TRAVEL_MODE,
+
+        unitSystem:               UNIT_SYSTEM,
+
+        avoidHighways:            AVOID_HIGHWAYS,
+
+        optimizeWaypoints:        OPTIMIZE_WAYPOINTS,
+
+        provideRouteAlternatives: PROVIDE_ROUTE_ALTERNATIVES
 
     }, function(result, status) {
 
         if (status === "OK") {
 
             _addSegment(result);
+
+            getDirections();
 
         } else {
 
@@ -118,6 +133,92 @@ function curtailRoute(event) {
 
     _removeSegment();
 }
+
+
+/**
+ * DIRECTIONS METHODS
+ * {method} _displayDirections
+ */
+
+function getDirections() {
+
+    /* Google Maps API limit is 8 waypoints plus origin and destination. :( */
+    var origin      = path[0],
+        destination = path[path.length - 1],
+        intervals   = _.uniq([
+            Math.round(0.1111 * (path.length - 1)),
+            Math.round(0.2222 * (path.length - 1)),
+            Math.round(0.3333 * (path.length - 1)),
+            Math.round(0.4444 * (path.length - 1)),
+            Math.round(0.5555 * (path.length - 1)),
+            Math.round(0.6666 * (path.length - 1)),
+            Math.round(0.7777 * (path.length - 1)),
+            Math.round(0.8888 * (path.length - 1))
+        ])
+        waypoints = [];
+
+    for (var i = 0, len = intervals.length; i < len; i++) {
+        waypoints[i] = {
+            location: path[intervals[i]],
+            stopover: false
+        };
+    }
+
+    DIRECTIONS_SERVICE.route({
+
+        origin:                   origin,
+
+        destination:              destination,
+
+        waypoints:                waypoints,
+
+        travelMode:               TRAVEL_MODE,
+
+        unitSystem:               UNIT_SYSTEM,
+
+        avoidHighways:            AVOID_HIGHWAYS,
+
+        optimizeWaypoints:        OPTIMIZE_WAYPOINTS,
+
+        provideRouteAlternatives: PROVIDE_ROUTE_ALTERNATIVES
+
+    }, function(result, status) {
+
+        if (status === "OK") {
+
+            _displayDirections(result);
+
+        } else {
+
+            for (var s = 0, slen = ERROR_STATUSES.length; s < slen; s++) {
+                if (status === ERROR_STATUSES[s]['constant']) {
+                    throwError(ERROR_STATUSES[s], result);
+                    return;
+                }
+            }
+        }
+    });
+}
+
+
+function _displayDirections(result) {
+
+    console.log('== _displayDirections() ==');
+
+    // Assumptions: only one route, only one leg.
+    var leg   = result.routes[0].legs[0],
+        steps = leg['steps'] || [],
+        totalDistance = leg['distance']['text'],
+        totalDuration = leg['duration']['text'];
+
+    console.log('Total distance',totalDistance);
+    console.log('Estimated duration',totalDuration);
+
+    for (var s = 0, slen = steps.length; s < slen; s++) {
+        console.log(s + 1,steps[s]['instructions'],steps[s]['distance']['text']);
+    }
+}
+
 
 /**
  * SEGMENT METHODS
@@ -239,7 +340,6 @@ function throwError(status, result) {
     // console.log('debug result object from google', result);
 }
 
-
 /**
  * init()
  */
@@ -251,7 +351,7 @@ function init() {
     // Set map options
     mapOptions = {
         center:    new google.maps.LatLng(40.25275, -108.64038),
-        zoom:      15,
+        zoom:      14,
         mapTypeId: google.maps.MapTypeId.TERRAIN
     };
 
