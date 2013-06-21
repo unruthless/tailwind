@@ -16,15 +16,24 @@ body {
 #panels {
     position: fixed;
     right: 0;
-    top: 0;
+    top: 3%;
     width: 25%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
+    height: 94%;
+    background: rgba(0,0,0,0.7);
     color: #FFF;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-radius: 1em 0 0 1em;
 }
 
 #panels .panel {
-    padding: 0.5em 5%;
+    padding: 0 5%;
+}
+
+#panels .controls {
+    padding-top: 1em;
+    padding-bottom: 1em;
+    text-align: center;
 }
 
 #panels .panel-heading {

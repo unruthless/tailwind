@@ -224,8 +224,8 @@ function _displayDirections(result) {
     stepsHTML += '</ol>';
 
 
-    $('#origin').text(origin);
-    $('#destination').text(destination);
+    $('#origin').text('From ' + origin);
+    $('#destination').text('To ' + destination);
     $('#totalDistance').text(totalDistance);
     $('#totalDuration').text(totalDuration);
     $('#directions').html(stepsHTML);
@@ -364,7 +364,20 @@ function init() {
     mapOptions = {
         center:    new google.maps.LatLng(40.25275, -108.64038),
         zoom:      14,
-        mapTypeId: google.maps.MapTypeId.TERRAIN
+        mapTypeId: google.maps.MapTypeId.TERRAIN,
+        mapTypeControl: true,
+        mapTypeControlOptions: {
+            style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+            position: google.maps.ControlPosition.LEFT_TOP
+        },
+        panControl: true,
+        panControlOptions: {
+            position: google.maps.ControlPosition.LEFT_CENTER
+        },
+        zoomControl: true,
+        zoomControlOptions: {
+            position: google.maps.ControlPosition.LEFT_CENTER
+        }
     };
 
     // Assign map to HTML element
