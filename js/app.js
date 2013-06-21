@@ -112,8 +112,8 @@ function destroyRoute() {
     polyline.setPath(path);
 
     // Remove the markers and underlying marker data.
-    for (var i = markers.length - 1; i >= 0; i--) {
-        _destroyMarker(i);
+    for (var i = markers.length; i > 0; i--) {
+        _destroyMarker(i - 1);
     }
 }
 
@@ -303,8 +303,8 @@ function _addSegment(result) {
 
 function _removeSegment() {
 
-    // console.log('== _removeSegment() ==');
- 
+    console.log('== _removeSegment() ==');
+
     var pointsToRemove = segments[segments.length - 1];
 
     // If no segments to remove, reset the route.
@@ -320,8 +320,10 @@ function _removeSegment() {
         // Remove the last (segment's number of) items from the path array
         path.splice(-pointsToRemove, pointsToRemove);
 
-        // Draw the marker at the new last point.
-        _drawMarker(markers.length - 1);
+        // If path still contains more than one point, draw a marker at the new last point.
+        if (path.length > 1) {
+            _drawMarker(markers.length - 1);
+        }
 
         // Redraw the path.
         polyline.setPath(path);
@@ -360,7 +362,7 @@ function _createMarker(location) {
 function _destroyMarker(index) {
 
     // Argument sanity check.
-    if (!index || typeof(index) !== 'number' || markers[index] === undefined) {
+    if (index === undefined || typeof(index) !== 'number' || markers[index] === undefined) {
         console.log('[DayTrip] Error: Invalid index passed to _destroyMarker()');
         return;
     }
@@ -375,7 +377,7 @@ function _destroyMarker(index) {
 function _drawMarker(index) {
 
     // Argument sanity check.
-    if (!index || typeof(index) !== 'number' || markers[index] === undefined) {
+    if (index === undefined || typeof(index) !== 'number' || markers[index] === undefined) {
         console.log('[DayTrip] Error: Invalid index passed to _drawMarker()');
         return;
     }
@@ -387,7 +389,7 @@ function _drawMarker(index) {
 function _eraseMarker(index) {
 
     // Argument sanity check.
-    if (!index || typeof(index) !== 'number' || markers[index] === undefined) {
+    if (index === undefined || typeof(index) !== 'number' || markers[index] === undefined) {
         console.log('[DayTrip] Error: Invalid index passed to _eraseMarker()');
         return;
     }
