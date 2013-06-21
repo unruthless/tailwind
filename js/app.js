@@ -86,7 +86,8 @@ function createRoute(location) {
         return;
     }
 
-    var origin = _createMarker(location);
+    // Create a marker at the clicked location.
+    _createMarker(location);
 
     // Set the clicked location, the path's origin, to be the first point.
     path.push(location);
