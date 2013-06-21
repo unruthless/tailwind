@@ -1,6 +1,22 @@
 var map,
     MAP_NODE           = $("#canvas").get(0),
-    mapOptions         = {},
+    mapOptions         = {
+            zoom:           14,
+            mapTypeId:      google.maps.MapTypeId.TERRAIN,
+            mapTypeControl: true,
+            mapTypeControlOptions: {
+                style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
+                position: google.maps.ControlPosition.LEFT_TOP
+            },
+            panControl: true,
+            panControlOptions: {
+                position: google.maps.ControlPosition.LEFT_CENTER
+            },
+            zoomControl: true,
+            zoomControlOptions: {
+                position: google.maps.ControlPosition.LEFT_CENTER
+            }
+        },
     polyline           = {},
     path               = [],
     segments           = [],
@@ -138,6 +154,7 @@ function curtailRoute(event) {
 
 /**
  * DIRECTIONS METHODS
+ * {method} getDirections
  * {method} _displayDirections
  */
 
@@ -201,7 +218,6 @@ function getDirections() {
     });
 }
 
-
 function _displayDirections(result) {
 
     console.log('== _displayDirections() ==');
@@ -230,7 +246,6 @@ function _displayDirections(result) {
     $('#totalDuration').text(totalDuration);
     $('#directions').html(stepsHTML);
 }
-
 
 /**
  * SEGMENT METHODS
@@ -360,25 +375,8 @@ function init() {
 
     console.log('== INIT ==');
 
-    // Set map options
-    mapOptions = {
-        center:    new google.maps.LatLng(40.25275, -108.64038),
-        zoom:      14,
-        mapTypeId: google.maps.MapTypeId.TERRAIN,
-        mapTypeControl: true,
-        mapTypeControlOptions: {
-            style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-            position: google.maps.ControlPosition.LEFT_TOP
-        },
-        panControl: true,
-        panControlOptions: {
-            position: google.maps.ControlPosition.LEFT_CENTER
-        },
-        zoomControl: true,
-        zoomControlOptions: {
-            position: google.maps.ControlPosition.LEFT_CENTER
-        }
-    };
+    // Set map center
+    mapOptions['center'] = new google.maps.LatLng(40.25275, -108.64038);
 
     // Assign map to HTML element
     map = new google.maps.Map(MAP_NODE, mapOptions);
