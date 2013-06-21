@@ -303,8 +303,6 @@ function _addSegment(result) {
 
 function _removeSegment() {
 
-    console.log('== _removeSegment() ==');
-
     var pointsToRemove = segments[segments.length - 1];
 
     // If no segments to remove, reset the route.
@@ -410,6 +408,14 @@ function throwError(status, result) {
     console.log('|  desc  |', status['description']);
     console.log('| remedy |', status['remedy']);
     // console.log('debug result object from google', result);
+}
+
+function __LOG(caller) {
+    console.log('LOG FROM', caller);
+    console.log('path',path,'path.length',path.length);
+    console.log('segments',segments,'segments.length',segments.length);
+    console.log('directions',directions,'directions.length',directions.length);
+    console.log('markers',markers,'markers.length',markers.length);
 }
 
 /**
