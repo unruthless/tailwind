@@ -78,7 +78,7 @@ var map,
 
 function createRoute(location) {
 
-    console.log('== CREATE ROUTE ==');
+    console.log('== [ROUTE] CREATE ROUTE ==');
 
     // Argument sanity check.
     if (!location || typeof(location) !== 'object') {
@@ -99,7 +99,7 @@ function createRoute(location) {
 
 function destroyRoute() {
 
-    console.log('== DESTROY ROUTE ==');
+    console.log('== [ROUTE] DESTROY ROUTE ==');
 
     // If the user clicks Reset button before creating the route
     if (polyline.setPath === undefined) {
@@ -115,11 +115,14 @@ function destroyRoute() {
     for (var i = markers.length; i > 0; i--) {
         _destroyMarker(i - 1);
     }
+
+    // Update info
+    _updateInfo();
 }
 
 function extendRoute(location) {
 
-    console.log('== EXTEND ROUTE ==');
+    console.log('== [ROUTE] EXTEND ROUTE ==');
 
     // Argument sanity check.
     if (!location || typeof(location) !== 'object') {
@@ -127,48 +130,85 @@ function extendRoute(location) {
         return;
     }
 
-    // Calculate directions between the previous point and the current point.
-    DIRECTIONS_SERVICE.route({
+    var origin      = path[path.length - 1],
+        destination = location,
+        waypoints   = [],
+        result;
 
-        origin:                   path[path.length - 1],
-
-        destination:              location,
-
-        travelMode:               TRAVEL_MODE,
-
-        unitSystem:               UNIT_SYSTEM,
-
-        avoidHighways:            AVOID_HIGHWAYS,
-
-        optimizeWaypoints:        OPTIMIZE_WAYPOINTS,
-
-        provideRouteAlternatives: PROVIDE_ROUTE_ALTERNATIVES
-
-    }, function(result, status) {
-
-        if (status === "OK") {
-
-            _addSegment(result);
-
-            getDirections();
-
-        } else {
-
-            for (var s = 0, slen = ERROR_STATUSES.length; s < slen; s++) {
-                if (status === ERROR_STATUSES[s]['constant']) {
-                    throwError(ERROR_STATUSES[s], result);
-                    return;
-                }
-            }
-        }
-    });
+    // Request routing to update map
+    calculateRoute(origin, destination, waypoints, 'draw');
 }
 
 function curtailRoute() {
 
-    console.log('== CURTAIL ROUTE ==');
+    console.log('== [ROUTE] CURTAIL ROUTE ==');
 
     _removeSegment();
+}
+
+/**
+ * API METHODS
+ * {method} getNewRoute
+ */
+
+function calculateRoute(origin, destination, waypoints, purpose) {
+
+    console.log('== [API] GET NEW ROUTE ==');
+
+    // Argument sanity checking.
+    if (!origin || typeof(origin) !== 'object') {
+        console.log('[DayTrip] Error: Invalid origin passed to getNewRoute()');
+        return;
+    }
+
+    if (!destination || typeof(destination) !== 'object') {
+        console.log('[DayTrip] Error: Invalid destination passed to getNewRoute()');
+        return;
+    }
+
+    if (!purpose || (purpose !== 'draw' && purpose !== 'info')) {
+        console.log('[DayTrip] Error: Invalid purpose passed to getNewRoute()');
+        return;
+    }
+
+    var routeOptions = {
+            origin:                   origin,
+            destination:              destination,
+            travelMode:               TRAVEL_MODE,
+            unitSystem:               UNIT_SYSTEM,
+            avoidHighways:            AVOID_HIGHWAYS,
+            optimizeWaypoints:        OPTIMIZE_WAYPOINTS,
+            provideRouteAlternatives: PROVIDE_ROUTE_ALTERNATIVES
+        };
+
+    var handler = function(result, status) {
+
+            console.log('handler');
+
+            if (status === "OK") {
+
+                if (purpose === 'draw') {
+                    _addSegment(result);
+                } else if (purpose === 'info') {
+                    _updateInfo(result);
+                }
+
+            } else {
+
+                for (var s = 0, slen = ERROR_STATUSES.length; s < slen; s++) {
+                    if (status === ERROR_STATUSES[s]['constant']) {
+                        throwError(ERROR_STATUSES[s], result);
+                        return;
+                    }
+                }
+            }
+        };
+
+    // Handle waypoints, which are optional.
+    routeOptions['waypoints'] = (waypoints && typeof(waypoints) === 'array') ? waypoints : [];
+
+    // S'up, Google.
+    DIRECTIONS_SERVICE.route(routeOptions, handler);
 }
 
 /**
@@ -177,11 +217,67 @@ function curtailRoute() {
  * {method} _displayDirections
  */
 
+function _updateInfo(result) {
+
+    console.log('== _updateInfo(result) ==');
+
+    var leg,
+        steps,
+        origin,
+        destination,
+        totalDistance,
+        totalDuration,
+        stepsHTML;
+
+    // If fewer than 2 points, reset everything.
+    if (path.length < 2) {
+        $('#origin').text('');
+        $('#destination').text('');
+        $('#totalDistance').text('');
+        $('#totalDuration').text('');
+        $('#directions').text('');
+        return;
+    }
+
+    // Argument sanity check.
+    if (!result || typeof(result) !== 'object') {
+        console.log('[DayTrip] Error: Invalid result passed to _displayDirections()');
+        return;
+    }
+
+    // Assumptions: only one route, only one leg.
+    leg           = result.routes[0].legs[0] || [];
+    origin        = leg['start_address']     || '';
+    destination   = leg['end_address']       || '';
+    totalDistance = leg['distance']['text']  || '';
+    totalDuration = leg['duration']['text']  || '';
+    steps         = leg['steps']             || [];
+    directions    = '';
+
+    // Build turn-by-turn directions
+    for (var s = 0, slen = steps.length; s < slen; s++) {
+
+        directions += (s === 0) ? '<ol>' : '';
+
+        directions += '<li>' + steps[s]['instructions'] + ' (' + steps[s]['distance']['text'] + ')</li>';
+
+        directions += (s === slen - 1) ? '</ol>' : '';
+    }
+
+    // Output
+    $('#origin').text('From ' + origin);
+    $('#destination').text('To ' + destination);
+    $('#totalDistance').text(totalDistance);
+    $('#totalDuration').text(totalDuration);
+    $('#directions').html(directions);
+}
+
 function getDirections() {
 
     /* Google Maps API limit is 8 waypoints plus origin and destination. :( */
     var origin      = path[0],
         destination = path[path.length - 1],
+        waypoints   = [],
         intervals   = _.uniq([
             Math.round(0.1111 * (path.length - 1)),
             Math.round(0.2222 * (path.length - 1)),
@@ -191,8 +287,7 @@ function getDirections() {
             Math.round(0.6666 * (path.length - 1)),
             Math.round(0.7777 * (path.length - 1)),
             Math.round(0.8888 * (path.length - 1))
-        ])
-        waypoints = [];
+        ]);
 
     for (var i = 0, len = intervals.length; i < len; i++) {
         waypoints[i] = {
@@ -201,70 +296,7 @@ function getDirections() {
         };
     }
 
-    DIRECTIONS_SERVICE.route({
-
-        origin:                   origin,
-
-        destination:              destination,
-
-        waypoints:                waypoints,
-
-        travelMode:               TRAVEL_MODE,
-
-        unitSystem:               UNIT_SYSTEM,
-
-        avoidHighways:            AVOID_HIGHWAYS,
-
-        optimizeWaypoints:        OPTIMIZE_WAYPOINTS,
-
-        provideRouteAlternatives: PROVIDE_ROUTE_ALTERNATIVES
-
-    }, function(result, status) {
-
-        if (status === "OK") {
-
-            _displayDirections(result);
-
-        } else {
-
-            for (var s = 0, slen = ERROR_STATUSES.length; s < slen; s++) {
-                if (status === ERROR_STATUSES[s]['constant']) {
-                    throwError(ERROR_STATUSES[s], result);
-                    return;
-                }
-            }
-        }
-    });
-}
-
-function _displayDirections(result) {
-
-    // Argument sanity check.
-    if (!result || typeof(result) !== 'object') {
-        console.log('[DayTrip] Error: Invalid result passed to _displayDirections()');
-        return;
-    }
-
-    // Assumptions: only one route, only one leg.
-    var leg           = result.routes[0].legs[0],
-        steps         = leg['steps'] || [],
-        origin        = leg['start_address'],
-        destination   = leg['end_address'],
-        totalDistance = leg['distance']['text'],
-        totalDuration = leg['duration']['text'],
-        stepsHTML     = '';
-
-    stepsHTML = '<ol>';
-    for (var s = 0, slen = steps.length; s < slen; s++) {
-        stepsHTML += '<li>' + steps[s]['instructions'] + ' (' + steps[s]['distance']['text'] + ')</li>';
-    }
-    stepsHTML += '</ol>';
-
-    $('#origin').text('From ' + origin);
-    $('#destination').text('To ' + destination);
-    $('#totalDistance').text(totalDistance);
-    $('#totalDuration').text(totalDuration);
-    $('#directions').html(stepsHTML);
+    calculateRoute(origin, destination, waypoints, 'info');
 }
 
 /**
@@ -289,6 +321,7 @@ function _addSegment(result) {
         _eraseMarker(markers.length - 1);
     }
 
+    // Cache the number of points in this segment.
     segments.push(seg_pts);
 
     // Add this segment's points to the path array.
@@ -299,36 +332,40 @@ function _addSegment(result) {
 
     // Redraw the path.
     polyline.setPath(path);
+
+    // Get updated directions.
+    getDirections();
 }
 
 function _removeSegment() {
 
-    var pointsToRemove = segments[segments.length - 1];
-
     // If no segments to remove, reset the route.
     if (segments.length === 0) {
-
         destroyRoute();
-
-    } else {
-
-        // Destroy the last marker in the marker's array
-        _destroyMarker(markers.length - 1);
-
-        // Remove the last (segment's number of) items from the path array
-        path.splice(-pointsToRemove, pointsToRemove);
-
-        // If path still contains more than one point, draw a marker at the new last point.
-        if (path.length > 1) {
-            _drawMarker(markers.length - 1);
-        }
-
-        // Redraw the path.
-        polyline.setPath(path);
-
-        // Remove the last item in the segment array.
-        segments.splice(-1, 1);
+        return;
     }
+
+    var pointsToRemove = segments[segments.length - 1];
+
+    // Destroy the last marker in the marker's array.
+    _destroyMarker(markers.length - 1);
+
+    // Remove the last segment's number of items from the path array.
+    path.splice(-pointsToRemove, pointsToRemove);
+
+    // If the path still contains more than one point, draw a marker at the new last point.
+    if (path.length > 1) {
+        _drawMarker(markers.length - 1);
+    }
+
+    // Redraw the path.
+    polyline.setPath(path);
+
+    // Remove the last item in the segment array.
+    segments.splice(-1, 1);
+
+    // Get updated directions.
+    getDirections();
 }
 
 /**
