@@ -8,15 +8,15 @@ var map,
             mapTypeControl: true,
             mapTypeControlOptions: {
                 style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-                position: google.maps.ControlPosition.LEFT_TOP
+                position: google.maps.ControlPosition.RIGHT_TOP
             },
             panControl: true,
             panControlOptions: {
-                position: google.maps.ControlPosition.LEFT_CENTER
+                position: google.maps.ControlPosition.RIGHT_CENTER
             },
             zoomControl: true,
             zoomControlOptions: {
-                position: google.maps.ControlPosition.LEFT_CENTER
+                position: google.maps.ControlPosition.RIGHT_CENTER
             }
         },
     polyline           = {},
@@ -73,7 +73,7 @@ var map,
  * {method} createRoute
  * {method} destroyRoute
  * {method} extendRoute
- * {method} curtailRoute
+ * {method} truncateRoute
  */
 
 function createRoute(location) {
@@ -139,35 +139,35 @@ function extendRoute(location) {
     calculateRoute(origin, destination, waypoints, 'draw');
 }
 
-function curtailRoute() {
+function truncateRoute() {
 
-    console.log('== [ROUTE] CURTAIL ROUTE ==');
+    console.log('== [ROUTE] TRUNCATE ROUTE ==');
 
     _removeSegment();
 }
 
 /**
  * API METHODS
- * {method} getNewRoute
+ * {method} calculateRoute
  */
 
 function calculateRoute(origin, destination, waypoints, purpose) {
 
-    console.log('== [API] GET NEW ROUTE ==');
+    console.log('== [API] CALCULATE ROUTE ==');
 
     // Argument sanity checking.
     if (!origin || typeof(origin) !== 'object') {
-        console.log('[DayTrip] Error: Invalid origin passed to getNewRoute()');
+        console.log('[DayTrip] Error: Invalid origin passed to calculateRoute()');
         return;
     }
 
     if (!destination || typeof(destination) !== 'object') {
-        console.log('[DayTrip] Error: Invalid destination passed to getNewRoute()');
+        console.log('[DayTrip] Error: Invalid destination passed to calculateRoute()');
         return;
     }
 
     if (!purpose || (purpose !== 'draw' && purpose !== 'info')) {
-        console.log('[DayTrip] Error: Invalid purpose passed to getNewRoute()');
+        console.log('[DayTrip] Error: Invalid purpose passed to calculateRoute()');
         return;
     }
 
@@ -182,8 +182,6 @@ function calculateRoute(origin, destination, waypoints, purpose) {
         };
 
     var handler = function(result, status) {
-
-            console.log('handler');
 
             if (status === "OK") {
 
@@ -214,12 +212,39 @@ function calculateRoute(origin, destination, waypoints, purpose) {
 /**
  * DIRECTIONS METHODS
  * {method} getDirections
- * {method} _displayDirections
+ * {method} _updateInfo
  */
 
-function _updateInfo(result) {
+function getDirections() {
 
-    console.log('== _updateInfo(result) ==');
+    console.log('== [DIRECTIONS] GET DIRECTIONS ==');
+
+    /* Google Maps API limit is 8 waypoints plus origin and destination. :( */
+    var origin      = path[0],
+        destination = path[path.length - 1],
+        waypoints   = [],
+        intervals   = _.uniq([
+            Math.round(0.1111 * (path.length - 1)),
+            Math.round(0.2222 * (path.length - 1)),
+            Math.round(0.3333 * (path.length - 1)),
+            Math.round(0.4444 * (path.length - 1)),
+            Math.round(0.5555 * (path.length - 1)),
+            Math.round(0.6666 * (path.length - 1)),
+            Math.round(0.7777 * (path.length - 1)),
+            Math.round(0.8888 * (path.length - 1))
+        ]);
+
+    for (var i = 0, len = intervals.length; i < len; i++) {
+        waypoints[i] = {
+            location: path[intervals[i]],
+            stopover: false
+        };
+    }
+
+    calculateRoute(origin, destination, waypoints, 'info');
+}
+
+function _updateInfo(result) {
 
     var leg,
         steps,
@@ -270,33 +295,6 @@ function _updateInfo(result) {
     $('#totalDistance').text(totalDistance);
     $('#totalDuration').text(totalDuration);
     $('#directions').html(directions);
-}
-
-function getDirections() {
-
-    /* Google Maps API limit is 8 waypoints plus origin and destination. :( */
-    var origin      = path[0],
-        destination = path[path.length - 1],
-        waypoints   = [],
-        intervals   = _.uniq([
-            Math.round(0.1111 * (path.length - 1)),
-            Math.round(0.2222 * (path.length - 1)),
-            Math.round(0.3333 * (path.length - 1)),
-            Math.round(0.4444 * (path.length - 1)),
-            Math.round(0.5555 * (path.length - 1)),
-            Math.round(0.6666 * (path.length - 1)),
-            Math.round(0.7777 * (path.length - 1)),
-            Math.round(0.8888 * (path.length - 1))
-        ]);
-
-    for (var i = 0, len = intervals.length; i < len; i++) {
-        waypoints[i] = {
-            location: path[intervals[i]],
-            stopover: false
-        };
-    }
-
-    calculateRoute(origin, destination, waypoints, 'info');
 }
 
 /**
@@ -463,8 +461,11 @@ function init() {
 
     console.log('== INIT ==');
 
+    var arboretum = [42.29871, -71.12783];
+    var massadona = [40.25275, -108.64038];
+
     // Set map center
-    mapOptions['center'] = new google.maps.LatLng(40.25275, -108.64038);
+    mapOptions['center'] = new google.maps.LatLng(arboretum[0],arboretum[1]);
 
     // Assign map to HTML element
     map = new google.maps.Map(MAP_NODE, mapOptions);
@@ -475,7 +476,7 @@ function init() {
     });
 
     $undoBtn.on('click', function(event) {
-        curtailRoute();
+        truncateRoute();
     });
 
     // On click
