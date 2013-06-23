@@ -2,6 +2,14 @@ var map,
     $map               = $("#canvas"),
     $resetBtn          = $('#control-reset'),
     $undoBtn           = $('#control-undo'),
+    polyline           = {},
+    route              = {
+            points:   [],
+            segments: [],
+            markers:  [],
+            data:     []
+        },
+    intent             = '', // only way (for now) to pass intent into handleRoute callback :/ 
     mapOptions         = {
             zoom: 13,
             mapTypeId: google.maps.MapTypeId.TERRAIN,
@@ -19,14 +27,6 @@ var map,
                 position: google.maps.ControlPosition.RIGHT_CENTER
             }
         },
-    polyline           = {},
-    route              = {
-            points:   [],
-            segments: [],
-            markers:  [],
-            data:     []
-        }
-    intent             = '', // only way (for now) to pass intent into handleRoute callback :/ 
     TRAVEL_MODE        = google.maps.DirectionsTravelMode.BICYCLING,
     UNIT_SYSTEM        = google.maps.UnitSystem.IMPERIAL,
     AVOID_HIGHWAYS     = true,
