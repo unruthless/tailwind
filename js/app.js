@@ -20,10 +20,12 @@ var map,
             }
         },
     polyline           = {},
-    path               = [], // cache points
-    segments           = [], // cache calculated segments
-    routes             = [], // cache calculated routes
-    markers            = [], // cache point marker objects
+    route              = {
+            points:   [],
+            segments: [],
+            markers:  [],
+            data:     []
+        }
     intent             = '', // only way (for now) to pass intent into handleRoute callback :/ 
     TRAVEL_MODE        = google.maps.DirectionsTravelMode.BICYCLING,
     UNIT_SYSTEM        = google.maps.UnitSystem.IMPERIAL,
@@ -54,12 +56,12 @@ function createRoute(location) {
     // Create a marker at the clicked location.
     _createMarker(location);
 
-    // Set the clicked location, the path's origin, to be the first point.
-    path.push(location);
+    // Set the clicked location to be the first point on the route.
+    route.points.push(location);
 
-    // Create the polyline and draw the path.
+    // Create the polyline and draw it on the map.
     polyline = new google.maps.Polyline({ map: map });
-    polyline.setPath(path);
+    polyline.setPath(route.points);
 }
 
 function destroyRoute() {
@@ -72,12 +74,12 @@ function destroyRoute() {
         return;
     }
 
-    // Empty all points from path, then erase the polyline.
-    path = [];
-    polyline.setPath(path);
+    // Delete all points on the route, then erase the polyline.
+    route.points = [];
+    polyline.setPath(route.points);
 
     // Remove the markers and underlying marker data.
-    for (var i = markers.length; i > 0; i--) {
+    for (var i = route.markers.length; i > 0; i--) {
         _destroyMarker(i - 1);
     }
 
@@ -95,7 +97,7 @@ function extendRoute(location) {
         return;
     }
 
-    var origin      = path[path.length - 1],
+    var origin      = route.points[route.points.length - 1],
         destination = location,
         waypoints   = [],
         result;
@@ -241,23 +243,23 @@ function extendDirections() {
        the printed directions aren't necessarily going to match the route
        drawn on-screen.
     */
-    var origin      = path[0],
-        destination = path[path.length - 1],
+    var origin      = route.points[0],
+        destination = route.points[route.points.length - 1],
         waypoints   = [],
         intervals   = _.uniq([
-            Math.round(0.1111 * (path.length - 1)),
-            Math.round(0.2222 * (path.length - 1)),
-            Math.round(0.3333 * (path.length - 1)),
-            Math.round(0.4444 * (path.length - 1)),
-            Math.round(0.5555 * (path.length - 1)),
-            Math.round(0.6666 * (path.length - 1)),
-            Math.round(0.7777 * (path.length - 1)),
-            Math.round(0.8888 * (path.length - 1))
+            Math.round(0.1111 * (route.points.length - 1)),
+            Math.round(0.2222 * (route.points.length - 1)),
+            Math.round(0.3333 * (route.points.length - 1)),
+            Math.round(0.4444 * (route.points.length - 1)),
+            Math.round(0.5555 * (route.points.length - 1)),
+            Math.round(0.6666 * (route.points.length - 1)),
+            Math.round(0.7777 * (route.points.length - 1)),
+            Math.round(0.8888 * (route.points.length - 1))
         ]);
 
     for (var i = 0, len = intervals.length; i < len; i++) {
         waypoints[i] = {
-            location: path[intervals[i]],
+            location: route.points[intervals[i]],
             stopover: false
         };
     }
@@ -288,7 +290,7 @@ function _printDirections(result) {
         directions;
 
     // If fewer than 2 points, reset everything.
-    if (path.length < 2) {
+    if (route.points.length < 2) {
         $('#origin').text('');
         $('#destination').text('');
         $('#totalDistance').text('');
@@ -347,22 +349,22 @@ function _addSegment(result) {
     var segment = result.routes[0].overview_path        || [],
         seg_pts = result.routes[0].overview_path.length || 0;
 
-    // If the path contains more than one point, erase the old final point's marker.
-    if (path.length > 1) {
-        _eraseMarker(markers.length - 1);
+    // If the route contains more than one point, erase the old final point's marker.
+    if (route.points.length > 1) {
+        _eraseMarker(route.markers.length - 1);
     }
 
     // Cache the number of points in this segment.
-    segments.push(seg_pts);
+    route.segments.push(seg_pts);
 
-    // Add this segment's points to the path array.
-    path = path.concat(segment);
+    // Append this segment's points to the route.
+    route.points = route.points.concat(segment);
 
     // Place a marker at the new final point.
-    _createMarker(path[path.length - 1]);
+    _createMarker(route.points[route.points.length - 1]);
 
-    // Redraw the path.
-    polyline.setPath(path);
+    // Redraw the polyline on the map.
+    polyline.setPath(route.points);
 
     // Recalculate directions.
     intent = 'direct';
@@ -372,29 +374,29 @@ function _addSegment(result) {
 function _removeSegment() {
 
     // If no segments to remove, reset the route.
-    if (segments.length === 0) {
+    if (route.segments.length === 0) {
         destroyRoute();
         return;
     }
 
-    var pointsToRemove = segments[segments.length - 1];
+    var pointsToRemove = route.segments[route.segments.length - 1];
 
     // Destroy the last marker in the marker's array.
-    _destroyMarker(markers.length - 1);
+    _destroyMarker(route.markers.length - 1);
 
-    // Remove the last segment's number of items from the path array.
-    path.splice(-pointsToRemove, pointsToRemove);
+    // Remove the last segment's number of points from the route.
+    route.points.splice(-pointsToRemove, pointsToRemove);
 
-    // If the path still contains more than one point, draw a marker at the new last point.
-    if (path.length > 1) {
-        _drawMarker(markers.length - 1);
+    // If the route still contains more than one point, draw a marker at the new last point.
+    if (route.points.length > 1) {
+        _drawMarker(route.markers.length - 1);
     }
 
-    // Redraw the path.
-    polyline.setPath(path);
+    // Redraw the polyline on the map.
+    polyline.setPath(route.points);
 
-    // Remove the last item in the segment array.
-    segments.splice(-1, 1);
+    // Delete the last segment's data.
+    route.segments.splice(-1, 1);
 
     // Recalculate directions.
     intent = 'direct';
@@ -423,14 +425,14 @@ function _createMarker(location) {
             map: map
         });
 
-    // Append this marker to the markers array.
-    markers.push(marker);
+    // Append this marker's data to the route.
+    route.markers.push(marker);
 }
 
 function _destroyMarker(index) {
 
     // Argument sanity check.
-    if (index === undefined || typeof(index) !== 'number' || markers[index] === undefined) {
+    if (index === undefined || typeof(index) !== 'number' || route.markers[index] === undefined) {
         console.log('[DayTrip] Error: Invalid index passed to _destroyMarker()');
         return;
     }
@@ -438,32 +440,32 @@ function _destroyMarker(index) {
     // Erase this marker from the map.
     _eraseMarker(index);
 
-    // Remove this marker's data from the markers array.
-    markers.splice(index, 1);
+    // Remove this marker from the route data.
+    route.markers.splice(index, 1);
 }
 
 function _drawMarker(index) {
 
     // Argument sanity check.
-    if (index === undefined || typeof(index) !== 'number' || markers[index] === undefined) {
+    if (index === undefined || typeof(index) !== 'number' || route.markers[index] === undefined) {
         console.log('[DayTrip] Error: Invalid index passed to _drawMarker()');
         return;
     }
 
     // Draw this marker on the map.
-    markers[index].setMap(map);
+    route.markers[index].setMap(map);
 }
 
 function _eraseMarker(index) {
 
     // Argument sanity check.
-    if (index === undefined || typeof(index) !== 'number' || markers[index] === undefined) {
+    if (index === undefined || typeof(index) !== 'number' || route.markers[index] === undefined) {
         console.log('[DayTrip] Error: Invalid index passed to _eraseMarker()');
         return;
     }
 
     // Erase this marker from the map.
-    markers[index].setMap();
+    route.markers[index].setMap();
 }
 
 /**
@@ -473,10 +475,9 @@ function _eraseMarker(index) {
 
 function __LOG(caller) {
     console.log('LOG FROM', caller);
-    console.log('path',path,'path.length',path.length);
-    console.log('segments',segments,'segments.length',segments.length);
-    console.log('directions',directions,'directions.length',directions.length);
-    console.log('markers',markers,'markers.length',markers.length);
+    console.log('route.points',route.points,'route.points.length',route.points.length);
+    console.log('route.segments',route.segments,'route.segments.length',route.segments.length);
+    console.log('route.markers',route.markers,'route.markers.length',route.markers.length);
     console.log('intent',intent);
 }
 
@@ -511,7 +512,7 @@ function init() {
 
         var location = event.latLng || '';
 
-        if (path.length == 0) {
+        if (route.points.length == 0) {
             createRoute(location);
         } else {
             extendRoute(location);
