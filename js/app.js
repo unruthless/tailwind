@@ -1,5 +1,5 @@
 var map,
-    MAP_NODE           = $("#canvas").get(0),
+    $map               = $("#canvas"),
     $resetBtn          = $('#control-reset'),
     $undoBtn           = $('#control-undo'),
     mapOptions         = {
@@ -22,51 +22,16 @@ var map,
     polyline           = {},
     path               = [], // cache points
     segments           = [], // cache calculated segments
-    directions         = [], // cache calculated directions
+    routes             = [], // cache calculated routes
     markers            = [], // cache point marker objects
+    intent             = '', // only way (for now) to pass intent into handleRoute callback :/ 
     TRAVEL_MODE        = google.maps.DirectionsTravelMode.BICYCLING,
     UNIT_SYSTEM        = google.maps.UnitSystem.IMPERIAL,
     AVOID_HIGHWAYS     = true,
     OPTIMIZE_WAYPOINTS = false,
     PROVIDE_ROUTE_ALTERNATIVES = false,
     DIRECTIONS_SERVICE = new google.maps.DirectionsService(),
-    ERROR_STATUSES     = [
-        {
-            constant    : "INVALID_REQUEST",
-            description : "The DirectionsRequest provided was invalid.",
-            remedy      : "Email ruthie@cyclingcoder.com."
-        },
-        {
-            constant    : "MAX_WAYPOINTS_EXCEEDED",
-            description : "Too many DirectionsWaypoints were provided in the DirectionsRequest. The total allowed waypoints is 8, plus the origin and destination. Maps API for Business customers are allowed 23 waypoints, plus the origin, and destination.",
-            remedy      : "Email ruthie@cyclingcoder.com."
-        },
-        {
-            constant    : "NOT_FOUND",
-            description : "At least one of the origin, destination, or waypoints could not be geocoded.",
-            remedy      : "Email ruthie@cyclingcoder.com."
-        },
-        {
-            constant    : "OVER_QUERY_LIMIT",
-            description : "The webpage has gone over the requests limit in too short a period of time.",
-            remedy      : "Email ruthie@cyclingcoder.com."
-        },
-        {
-            constant    : "REQUEST_DENIED",
-            description : "The webpage is not allowed to use the directions service.",
-            remedy      : "Email ruthie@cyclingcoder.com."
-        },
-        {
-            constant    : "UNKNOWN_ERROR",
-            description : "A directions request could not be processed due to a server error. The request may succeed if you try again.",
-            remedy      : "Email ruthie@cyclingcoder.com."
-        },
-        {
-            constant    : "ZERO_RESULTS",
-            description : "No route could be found between the origin and destination.",
-            remedy      : "Try not crossing over country boundaries."
-        }
-    ];
+    ELEVATION_SERVICE  = new google.maps.ElevationService();
 
 /**
  * ROUTE METHODS
@@ -117,7 +82,7 @@ function destroyRoute() {
     }
 
     // Update info
-    _updateInfo();
+    _printDirections();
 }
 
 function extendRoute(location) {
@@ -136,38 +101,41 @@ function extendRoute(location) {
         result;
 
     // Request routing to update map
-    calculateRoute(origin, destination, waypoints, 'draw');
+    intent = 'draw';
+    getRoute(origin, destination, waypoints);
 }
 
 function truncateRoute() {
 
     console.log('== [ROUTE] TRUNCATE ROUTE ==');
 
+    // Remove a segment
     _removeSegment();
 }
 
 /**
  * API METHODS
- * {method} calculateRoute
+ * {method} getRoute
+ * {method} handleRoute
  */
 
-function calculateRoute(origin, destination, waypoints, purpose) {
+function getRoute(origin, destination, waypoints) {
 
-    console.log('== [API] CALCULATE ROUTE ==');
+    console.log('== [API] GET ROUTE ==');
 
     // Argument sanity checking.
     if (!origin || typeof(origin) !== 'object') {
-        console.log('[DayTrip] Error: Invalid origin passed to calculateRoute()');
+        console.log('[DayTrip] Error: Invalid origin passed to getRoute()');
         return;
     }
 
     if (!destination || typeof(destination) !== 'object') {
-        console.log('[DayTrip] Error: Invalid destination passed to calculateRoute()');
+        console.log('[DayTrip] Error: Invalid destination passed to getRoute()');
         return;
     }
 
-    if (!purpose || (purpose !== 'draw' && purpose !== 'info')) {
-        console.log('[DayTrip] Error: Invalid purpose passed to calculateRoute()');
+    if (!intent || (intent !== 'draw' && intent !== 'direct')) {
+        console.log('[DayTrip] Error: Invalid intent within getRoute()');
         return;
     }
 
@@ -181,43 +149,91 @@ function calculateRoute(origin, destination, waypoints, purpose) {
             provideRouteAlternatives: PROVIDE_ROUTE_ALTERNATIVES
         };
 
-    var handler = function(result, status) {
-
-            if (status === "OK") {
-
-                if (purpose === 'draw') {
-                    _addSegment(result);
-                } else if (purpose === 'info') {
-                    _updateInfo(result);
-                }
-
-            } else {
-
-                for (var s = 0, slen = ERROR_STATUSES.length; s < slen; s++) {
-                    if (status === ERROR_STATUSES[s]['constant']) {
-                        throwError(ERROR_STATUSES[s], result);
-                        return;
-                    }
-                }
-            }
-        };
-
     // Handle waypoints, which are optional.
     routeOptions['waypoints'] = (waypoints && typeof(waypoints) === 'array') ? waypoints : [];
 
     // S'up, Google.
-    DIRECTIONS_SERVICE.route(routeOptions, handler);
+    DIRECTIONS_SERVICE.route(routeOptions, handleRoute);
+}
+
+function handleRoute(result, status) {
+
+    console.log('== [API] HANDLE ROUTE ==');
+
+    switch (status) {
+
+        case 'OK':
+
+            if (intent === 'draw') {
+
+                _addSegment(result);
+
+            } else if (intent === 'direct') {
+
+                _printDirections(result);
+
+            } else {
+
+                console.log('[DayTrip] Error: bad value for `intent`:', intent);
+
+            }
+
+            break;
+
+        case 'INVALID_REQUEST':
+            // If we get this error, check everything in routeOptions.
+            console.log('The DirectionsRequest provided was invalid.');
+            break;
+
+        case 'MAX_WAYPOINTS_EXCEEDED':
+            // The getDirections() function should prevent this error.
+            console.log('Too many DirectionsWaypoints were provided in the DirectionsRequest. The total allowed waypoints is 8, plus the origin and destination. Maps API for Business customers are allowed 23 waypoints, plus the origin, and destination.');
+            break;
+
+        case 'NOT_FOUND':
+            // If we get this error, check origin, destination, and all of the points in waypoints.
+            console.log('At least one of the origin, destination, or waypoints could not be geocoded.');
+            break;
+
+        case 'OVER_QUERY_LIMIT':
+            // If we get this error, kill the app.
+            console.log('The webpage has gone over the requests limit in too short a period of time.');
+            break;
+
+        case 'REQUEST_DENIED':
+            // If we get this error, 
+            console.log('The webpage is not allowed to use the directions service.');
+            break;
+
+        case 'UNKNOWN_ERROR':
+            // If we get this error, wait a tick, then try the request again some fixed number of times.
+            console.log('A directions request could not be processed due to a server error. The request may succeed if you try again.');
+            break;
+
+        case 'ZERO_RESULTS':
+            // If we get this error, check if the origin and destination are in different countries.
+            // If they are, a few possibilities:
+            //  - switch to the MapQuest API that uses openstreetmap data: http://open.mapquestapi.com/directions/
+            //  - switch to walking directions and avoid highways.
+            console.log('No route could be found between the origin and destination.');
+            break;
+
+        default:
+            console.log('The Google Directions API has returned an unknown status code.');
+            break;
+    }
 }
 
 /**
  * DIRECTIONS METHODS
- * {method} getDirections
- * {method} _updateInfo
+ * {method} extendDirections
+ * {method} truncateDirections
+ * {method} _printDirections
  */
 
-function getDirections() {
+function extendDirections() {
 
-    console.log('== [DIRECTIONS] GET DIRECTIONS ==');
+    console.log('== [DIRECTIONS] EXTEND DIRECTIONS ==');
 
     /* Google Maps API limit is 8 waypoints plus origin and destination. :( */
     var origin      = path[0],
@@ -241,10 +257,22 @@ function getDirections() {
         };
     }
 
-    calculateRoute(origin, destination, waypoints, 'info');
+    // Calculate the new route
+    intent = 'direct';
+    getRoute(origin, destination, waypoints);
 }
 
-function _updateInfo(result) {
+function truncateDirections() {
+
+    console.log('== [DIRECTIONS] TRUNCATE DIRECTIONS ==');
+
+    // TBD. Stepping back shouldn't require another API call;
+    // we should cache the directions from the previous segment.
+}
+
+function _printDirections(result) {
+
+    console.log('== [DIRECTIONS] _printDirections ==');
 
     var leg,
         steps,
@@ -252,7 +280,7 @@ function _updateInfo(result) {
         destination,
         totalDistance,
         totalDuration,
-        stepsHTML;
+        directions;
 
     // If fewer than 2 points, reset everything.
     if (path.length < 2) {
@@ -279,7 +307,7 @@ function _updateInfo(result) {
     steps         = leg['steps']             || [];
     directions    = '';
 
-    // Build turn-by-turn directions
+    // Build turn-by-turn directions.
     for (var s = 0, slen = steps.length; s < slen; s++) {
 
         directions += (s === 0) ? '<ol>' : '';
@@ -289,7 +317,7 @@ function _updateInfo(result) {
         directions += (s === slen - 1) ? '</ol>' : '';
     }
 
-    // Output
+    // Output all the things.
     $('#origin').text('From ' + origin);
     $('#destination').text('To ' + destination);
     $('#totalDistance').text(totalDistance);
@@ -331,8 +359,9 @@ function _addSegment(result) {
     // Redraw the path.
     polyline.setPath(path);
 
-    // Get updated directions.
-    getDirections();
+    // Recalculate directions.
+    intent = 'direct';
+    extendDirections();
 }
 
 function _removeSegment() {
@@ -362,8 +391,9 @@ function _removeSegment() {
     // Remove the last item in the segment array.
     segments.splice(-1, 1);
 
-    // Get updated directions.
-    getDirections();
+    // Recalculate directions.
+    intent = 'direct';
+    extendDirections();
 }
 
 /**
@@ -431,19 +461,10 @@ function _eraseMarker(index) {
     markers[index].setMap();
 }
 
-
 /**
- * ERROR METHOD
+ * UTILITIES
+ * {method} __LOG
  */
-
-function throwError(status, result) {
-
-    console.log('[DayTrip] ERROR.');
-    console.log('|  type  |', status['constant']);
-    console.log('|  desc  |', status['description']);
-    console.log('| remedy |', status['remedy']);
-    // console.log('debug result object from google', result);
-}
 
 function __LOG(caller) {
     console.log('LOG FROM', caller);
@@ -451,6 +472,7 @@ function __LOG(caller) {
     console.log('segments',segments,'segments.length',segments.length);
     console.log('directions',directions,'directions.length',directions.length);
     console.log('markers',markers,'markers.length',markers.length);
+    console.log('intent',intent);
 }
 
 /**
@@ -468,7 +490,7 @@ function init() {
     mapOptions['center'] = new google.maps.LatLng(arboretum[0],arboretum[1]);
 
     // Assign map to HTML element
-    map = new google.maps.Map(MAP_NODE, mapOptions);
+    map = new google.maps.Map($map.get(0), mapOptions);
 
     // Kick off controls
     $resetBtn.on('click', function(event) {
