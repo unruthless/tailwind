@@ -235,7 +235,12 @@ function extendDirections() {
 
     console.log('== [DIRECTIONS] EXTEND DIRECTIONS ==');
 
-    /* Google Maps API limit is 8 waypoints plus origin and destination. :( */
+    /* Google Maps API limit is 8 waypoints plus origin and destination. :(
+       This is a problem with longer or more complex routes:
+       because not every point is being sent to Google to use as a waypoint,
+       the printed directions aren't necessarily going to match the route
+       drawn on-screen.
+    */
     var origin      = path[0],
         destination = path[path.length - 1],
         waypoints   = [],
