@@ -18,6 +18,7 @@ body {
     left: 0;
     top: 3%;
     width: 25%;
+    min-width: 370px;
     height: 94%;
     background: rgba(0,0,0,0.7);
     color: #FFF;

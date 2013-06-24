@@ -1,16 +1,19 @@
 var map,
-    $map               = $("#canvas"),
-    $resetBtn          = $('#control-reset'),
-    $undoBtn           = $('#control-undo'),
-    polyline           = {},
-    route              = {
+    $map = $("#canvas"),
+    polyline = {},
+    controls = {
+            $reset:  $('#control-reset'),
+            $undo:   $('#control-undo'),
+            $finish: $('#control-finish')
+        },
+    route = {
             points:   [],
             segments: [],
             markers:  [],
             data:     []
         },
-    intent             = '', // only way (for now) to pass intent into handleRoute callback :/ 
-    mapOptions         = {
+    intent = '', // only way (for now) to pass intent into handleRoute callback :/ 
+    mapOptions = {
             zoom: 13,
             mapTypeId: google.maps.MapTypeId.TERRAIN,
             mapTypeControl: true,
@@ -45,7 +48,7 @@ var map,
 
 function createRoute(location) {
 
-    console.log('== [ROUTE] CREATE ROUTE ==');
+    // console.log('== [ROUTE] CREATE ROUTE ==');
 
     // Argument sanity check.
     if (!location || typeof(location) !== 'object') {
@@ -66,7 +69,7 @@ function createRoute(location) {
 
 function destroyRoute() {
 
-    console.log('== [ROUTE] DESTROY ROUTE ==');
+    // console.log('== [ROUTE] DESTROY ROUTE ==');
 
     // If the user clicks Reset button before creating the route
     if (polyline.setPath === undefined) {
@@ -89,7 +92,7 @@ function destroyRoute() {
 
 function extendRoute(location) {
 
-    console.log('== [ROUTE] EXTEND ROUTE ==');
+    // console.log('== [ROUTE] EXTEND ROUTE ==');
 
     // Argument sanity check.
     if (!location || typeof(location) !== 'object') {
@@ -109,10 +112,19 @@ function extendRoute(location) {
 
 function truncateRoute() {
 
-    console.log('== [ROUTE] TRUNCATE ROUTE ==');
+    // console.log('== [ROUTE] TRUNCATE ROUTE ==');
 
     // Remove a segment
     _removeSegment();
+}
+
+function finishRoute() {
+
+    // console.log('== [ROUTE] FINISH ROUTE ==');
+
+    // Recalculate directions.
+    intent = 'direct';
+    getDirections();
 }
 
 /**
@@ -160,7 +172,7 @@ function getRoute(origin, destination, waypoints) {
 
 function handleRoute(result, status) {
 
-    console.log('== [API] HANDLE ROUTE ==');
+    //console.log('== [API] HANDLE ROUTE ==');
 
     switch (status) {
 
@@ -228,20 +240,20 @@ function handleRoute(result, status) {
 
 /**
  * DIRECTIONS METHODS
- * {method} extendDirections
- * {method} truncateDirections
+ * {method} getDirections
  * {method} _printDirections
  */
 
-function extendDirections() {
+function getDirections() {
 
-    console.log('== [DIRECTIONS] EXTEND DIRECTIONS ==');
+    // console.log('== [DIRECTIONS] GET DIRECTIONS ==');
 
-    /* Google Maps API limit is 8 waypoints plus origin and destination. :(
-       This is a problem with longer or more complex routes:
+    /*
+       Google Maps API limit is 8 waypoints plus origin and destination. Lame.
+       Below is a hack to make sure we aren't exceeding the API limit, but
+       this needs a better solution for long or complex routes:
        because not every point is being sent to Google to use as a waypoint,
-       the printed directions aren't necessarily going to match the route
-       drawn on-screen.
+       the printed directions often don't match the route drawn on-screen.
     */
     var origin      = route.points[0],
         destination = route.points[route.points.length - 1],
@@ -269,17 +281,9 @@ function extendDirections() {
     getRoute(origin, destination, waypoints);
 }
 
-function truncateDirections() {
-
-    console.log('== [DIRECTIONS] TRUNCATE DIRECTIONS ==');
-
-    // TBD. Stepping back shouldn't require another API call;
-    // we should cache the directions from the previous segment.
-}
-
 function _printDirections(result) {
 
-    console.log('== [DIRECTIONS] _printDirections ==');
+    // console.log('== [DIRECTIONS] _printDirections ==');
 
     var leg,
         steps,
@@ -365,10 +369,6 @@ function _addSegment(result) {
 
     // Redraw the polyline on the map.
     polyline.setPath(route.points);
-
-    // Recalculate directions.
-    intent = 'direct';
-    extendDirections();
 }
 
 function _removeSegment() {
@@ -384,23 +384,19 @@ function _removeSegment() {
     // Destroy the last marker in the marker's array.
     _destroyMarker(route.markers.length - 1);
 
-    // Remove the last segment's number of points from the route.
-    route.points.splice(-pointsToRemove, pointsToRemove);
-
     // If the route still contains more than one point, draw a marker at the new last point.
     if (route.points.length > 1) {
         _drawMarker(route.markers.length - 1);
     }
 
-    // Redraw the polyline on the map.
-    polyline.setPath(route.points);
-
     // Delete the last segment's data.
     route.segments.splice(-1, 1);
 
-    // Recalculate directions.
-    intent = 'direct';
-    extendDirections();
+    // Remove the last segment's number of points from the route.
+    route.points.splice(-pointsToRemove, pointsToRemove);
+
+    // Redraw the polyline on the map.
+    polyline.setPath(route.points);
 }
 
 /**
@@ -499,12 +495,16 @@ function init() {
     map = new google.maps.Map($map.get(0), mapOptions);
 
     // Kick off controls
-    $resetBtn.on('click', function(event) {
+    controls.$reset.on('click', function(event) {
         destroyRoute();
     });
 
-    $undoBtn.on('click', function(event) {
+    controls.$undo.on('click', function(event) {
         truncateRoute();
+    });
+
+    controls.$finish.on('click', function(event) {
+        finishRoute();
     });
 
     // On click
