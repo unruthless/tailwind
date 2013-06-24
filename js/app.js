@@ -295,11 +295,8 @@ function _printDirections(result) {
 
     // If fewer than 2 points, reset everything.
     if (route.points.length < 2) {
-        $('#origin').text('');
-        $('#destination').text('');
-        $('#totalDistance').text('');
-        $('#totalDuration').text('');
-        $('#directions').text('');
+        $('#route-overview').html('');
+        $('#route-directions').html('');
         return;
     }
 
@@ -329,11 +326,8 @@ function _printDirections(result) {
     }
 
     // Output all the things.
-    $('#origin').text('From ' + origin);
-    $('#destination').text('To ' + destination);
-    $('#totalDistance').text(totalDistance);
-    $('#totalDuration').text(totalDuration);
-    $('#directions').html(directions);
+    $('#route-overview').html('<p>' + 'From ' +  origin + ' to ' + destination + '</p><p>' + totalDistance + ' ' + totalDuration + '</p>');
+    $('#route-directions').html(directions);
 }
 
 /**
