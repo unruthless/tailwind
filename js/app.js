@@ -31,7 +31,7 @@ var map,
             }
         },
     TRAVEL_MODE        = google.maps.DirectionsTravelMode.BICYCLING,
-    UNIT_SYSTEM        = google.maps.UnitSystem.IMPERIAL,
+    UNIT_SYSTEM        = google.maps.UnitSystem.METRIC,
     AVOID_HIGHWAYS     = true,
     OPTIMIZE_WAYPOINTS = false,
     PROVIDE_ROUTE_ALTERNATIVES = false,
@@ -107,7 +107,7 @@ function extendRoute(location) {
 
     // Request routing to update map
     intent = 'draw';
-    getRoute(origin, destination, waypoints);
+    requestRoute(origin, destination, waypoints);
 }
 
 function truncateRoute() {
@@ -125,17 +125,21 @@ function finishRoute() {
     // Recalculate directions.
     intent = 'direct';
     getDirections();
+
+    requestElevation();
 }
 
 /**
  * API METHODS
- * {method} getRoute
- * {method} handleRoute
+ * {method} requestRoute
+ * {method} handleRouteRequest
+ * {method} requestElevation
+ * {method} handleElevationRequest
  */
 
-function getRoute(origin, destination, waypoints) {
+function requestRoute(origin, destination, waypoints) {
 
-    console.log('== [API] GET ROUTE ==');
+    console.log('== [API] REQUEST ROUTE ==');
 
     // Argument sanity checking.
     if (!origin || typeof(origin) !== 'object') {
@@ -153,7 +157,7 @@ function getRoute(origin, destination, waypoints) {
         return;
     }
 
-    var routeOptions = {
+    var data = {
             origin:                   origin,
             destination:              destination,
             travelMode:               TRAVEL_MODE,
@@ -164,15 +168,15 @@ function getRoute(origin, destination, waypoints) {
         };
 
     // Handle waypoints, which are optional.
-    routeOptions['waypoints'] = (waypoints && typeof(waypoints) === 'array') ? waypoints : [];
+    data['waypoints'] = (waypoints && typeof(waypoints) === 'array') ? waypoints : [];
 
     // S'up, Google.
-    DIRECTIONS_SERVICE.route(routeOptions, handleRoute);
+    DIRECTIONS_SERVICE.route(data, handleRouteRequest);
 }
 
-function handleRoute(result, status) {
+function handleRouteRequest(result, status) {
 
-    //console.log('== [API] HANDLE ROUTE ==');
+    console.log('== [API] HANDLE ROUTE REQUEST ==');
 
     switch (status) {
 
@@ -196,32 +200,32 @@ function handleRoute(result, status) {
 
         case 'INVALID_REQUEST':
             // If we get this error, check everything in routeOptions.
-            console.log('The DirectionsRequest provided was invalid.');
+            console.log('[DayTrip] Google Directions API error code ' + status + ': The DirectionsRequest provided was invalid.');
             break;
 
         case 'MAX_WAYPOINTS_EXCEEDED':
             // The getDirections() function should prevent this error.
-            console.log('Too many DirectionsWaypoints were provided in the DirectionsRequest. The total allowed waypoints is 8, plus the origin and destination. Maps API for Business customers are allowed 23 waypoints, plus the origin, and destination.');
+            console.log('[DayTrip] Google Directions API error code ' + status + ': Too many DirectionsWaypoints were provided in the DirectionsRequest. The total allowed waypoints is 8, plus the origin and destination. Maps API for Business customers are allowed 23 waypoints, plus the origin, and destination.');
             break;
 
         case 'NOT_FOUND':
             // If we get this error, check origin, destination, and all of the points in waypoints.
-            console.log('At least one of the origin, destination, or waypoints could not be geocoded.');
+            console.log('[DayTrip] Google Directions API error code ' + status + ': At least one of the origin, destination, or waypoints could not be geocoded.');
             break;
 
         case 'OVER_QUERY_LIMIT':
             // If we get this error, kill the app.
-            console.log('The webpage has gone over the requests limit in too short a period of time.');
+            console.log('[DayTrip] Google Directions API error code ' + status + ': The webpage has gone over the requests limit in too short a period of time.');
             break;
 
         case 'REQUEST_DENIED':
-            // If we get this error, 
-            console.log('The webpage is not allowed to use the directions service.');
+            // If we get this error, check the settings where I got the API key.
+            console.log('[DayTrip] Google Directions API error code ' + status + ': The webpage is not allowed to use the directions service.');
             break;
 
         case 'UNKNOWN_ERROR':
             // If we get this error, wait a tick, then try the request again some fixed number of times.
-            console.log('A directions request could not be processed due to a server error. The request may succeed if you try again.');
+            console.log('[DayTrip] Google Directions API error code ' + status + ': A directions request could not be processed due to a server error. The request may succeed if you try again.');
             break;
 
         case 'ZERO_RESULTS':
@@ -229,11 +233,60 @@ function handleRoute(result, status) {
             // If they are, a few possibilities:
             //  - switch to the MapQuest API that uses openstreetmap data: http://open.mapquestapi.com/directions/
             //  - switch to walking directions and avoid highways.
-            console.log('No route could be found between the origin and destination.');
+            console.log('[DayTrip] Google Directions API error code ' + status + ': No route could be found between the origin and destination.');
             break;
 
         default:
-            console.log('The Google Directions API has returned an unknown status code.');
+            console.log('[DayTrip] The Google Directions API has returned an unknown status code:', status);
+            break;
+    }
+}
+
+function requestElevation() {
+
+    console.log('== [API] REQUEST ELEVATION ==');
+
+    if (!route.points || route.points.length === 0) {
+        console.log('[DayTrip] Error: No points for getElevation()');
+        return;
+    }
+
+    var data = {
+        locations: route.points
+    };
+
+    // S'up, Google.
+    ELEVATION_SERVICE.getElevationForLocations(data, handleElevationRequest);
+}
+
+function handleElevationRequest(results, status) {
+
+    console.log('== [API] HANDLE ELEVATION REQUEST ==');
+
+    switch (status) {
+
+        case 'OK':
+            _printElevations(results);
+            break;
+
+        case 'INVALID_REQUEST':
+            console.log('[DayTrip] Google Elevation API error code ' + status + ': The API request was malformed.');
+            break;
+
+        case 'OVER_QUERY_LIMIT':
+            console.log('[DayTrip] Google Elevation API error code ' + status + ': The requestor has exceeded quota.');
+            break;
+
+        case 'REQUEST_DENIED':
+            console.log('[DayTrip] Google Elevation API error code ' + status + ': The API did not complete the request.');
+            break;
+
+        case 'UNKNOWN_ERROR':
+            console.log('[DayTrip] Google Elevation API error code ' + status + ': An elevation request could not be processed due to a server error. The request may succeed if you try again.');
+            break;
+
+        default:
+            console.log('[DayTrip] The Google Elevation API has returned an unknown status code:', status);
             break;
     }
 }
@@ -278,7 +331,7 @@ function getDirections() {
 
     // Calculate the new route
     intent = 'direct';
-    getRoute(origin, destination, waypoints);
+    requestRoute(origin, destination, waypoints);
 }
 
 function _printDirections(result) {
@@ -302,7 +355,7 @@ function _printDirections(result) {
 
     // Argument sanity check.
     if (!result || typeof(result) !== 'object') {
-        console.log('[DayTrip] Error: Invalid result passed to _displayDirections()');
+        console.log('[DayTrip] Error: Invalid result passed to _printDirections()');
         return;
     }
 
@@ -328,6 +381,21 @@ function _printDirections(result) {
     // Output all the things.
     $('#route-overview').html('<p>' + 'From ' +  origin + ' to ' + destination + '</p><p>' + totalDistance + ' ' + totalDuration + '</p>');
     $('#route-directions').html(directions);
+}
+
+function _printElevations(results) {
+
+    console.log('== _printElevations() ==');
+
+    // Argument sanity check.
+    if (!results || typeof(results) !== 'object') {
+        console.log('[DayTrip] Error: Invalid results passed to _printElevations()');
+        return;
+    }
+
+    for (var r = 0, rlen = results.length; r < rlen; r++) {
+        console.log(results[r]['elevation']);
+    }
 }
 
 /**
