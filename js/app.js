@@ -14,7 +14,7 @@ var map,
         },
     intent = '', // only way (for now) to pass intent into handleRoute callback :/ 
     mapOptions = {
-            zoom: 13,
+            zoom: 15,
             mapTypeId: google.maps.MapTypeId.TERRAIN,
             mapTypeControl: true,
             mapTypeControlOptions: {
@@ -139,7 +139,7 @@ function finishRoute() {
 
 function requestRoute(origin, destination, waypoints) {
 
-    console.log('== [API] REQUEST ROUTE ==');
+    // console.log('== [API] REQUEST ROUTE ==');
 
     // Argument sanity checking.
     if (!origin || typeof(origin) !== 'object') {
@@ -244,7 +244,7 @@ function handleRouteRequest(result, status) {
 
 function requestElevation() {
 
-    console.log('== [API] REQUEST ELEVATION ==');
+    // console.log('== [API] REQUEST ELEVATION ==');
 
     if (!route.points || route.points.length === 0) {
         console.log('[DayTrip] Error: No points for getElevation()');
@@ -383,9 +383,14 @@ function _printDirections(result) {
     $('#route-directions').html(directions);
 }
 
+/**
+ * ELEVATIONS METHODS
+ * {method} _printElevations
+ */ 
+
 function _printElevations(results) {
 
-    console.log('== _printElevations() ==');
+    // console.log('== _printElevations() ==');
 
     // Argument sanity check.
     if (!results || typeof(results) !== 'object') {
@@ -393,9 +398,50 @@ function _printElevations(results) {
         return;
     }
 
+    var deltaMeters     = 0,
+        netDeltaMeters  = 0,
+        netDeltaFeet    = 0,
+        ascentMeters    = 0,
+        ascentFeet      = 0,
+        descentMeters   = 0,
+        descentFeet     = 0;
+
     for (var r = 0, rlen = results.length; r < rlen; r++) {
-        console.log(results[r]['elevation']);
+
+        if (r + 1 < rlen) {
+            
+            deltaMeters = (results[r + 1]['elevation'] - results[r]['elevation']);
+            
+            if (deltaMeters < 0) {
+                descentMeters += Math.abs(deltaMeters);
+            } else {
+                ascentMeters += deltaMeters;
+            }
+        }
     }
+
+    // Convert to feet.
+    ascentFeet = metersToFeet(ascentMeters);
+    descentFeet = metersToFeet(descentMeters);
+
+    // Calculate net elevation change.
+    netDeltaMeters = ascentMeters - descentMeters;
+    netDeltaFeet = ascentFeet - descentFeet;
+
+    // Round to nearest unit and stringify.
+    ascentMeters = Math.floor(ascentMeters).toString();
+    descentMeters = Math.floor(descentMeters).toString();
+    ascentFeet = Math.floor(ascentFeet).toString();
+    descentFeet = Math.floor(descentFeet).toString();
+    netDeltaMeters = Math.floor(netDeltaMeters).toString();
+    netDeltaFeet = Math.floor(netDeltaFeet).toString();
+
+    // Output all the things.
+    $('#elevation-overview').html('<p>'
+        + ascentMeters   + ' meters (' + ascentFeet   + ' feet) total climb.<br>'
+        + descentMeters  + ' meters (' + descentFeet  + ' feet) total drop.<br>'
+        + netDeltaMeters + ' meters (' + netDeltaFeet + ' feet) overall elevation change.'
+        + '</p>');
 }
 
 /**
@@ -529,6 +575,7 @@ function _eraseMarker(index) {
 /**
  * UTILITIES
  * {method} __LOG
+ * {method} metersToFeet
  */
 
 function __LOG(caller) {
@@ -537,6 +584,11 @@ function __LOG(caller) {
     console.log('route.segments',route.segments,'route.segments.length',route.segments.length);
     console.log('route.markers',route.markers,'route.markers.length',route.markers.length);
     console.log('intent',intent);
+}
+
+function metersToFeet(meters) {
+    
+    return (3.28084 * meters);
 }
 
 /**
@@ -549,9 +601,10 @@ function init() {
 
     var arboretum = [42.29871, -71.12783];
     var massadona = [40.25275, -108.64038];
+    var castro    = [37.762, -122.435];
 
     // Set map center
-    mapOptions['center'] = new google.maps.LatLng(arboretum[0],arboretum[1]);
+    mapOptions['center'] = new google.maps.LatLng(castro[0],castro[1]);
 
     // Assign map to HTML element
     map = new google.maps.Map($map.get(0), mapOptions);
