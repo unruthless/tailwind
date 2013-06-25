@@ -48,9 +48,7 @@ var map,
 
 function createRoute(location) {
 
-    // console.log('== [ROUTE] CREATE ROUTE ==');
-
-    // Argument sanity check.
+    // Check argument.
     if (!location || typeof(location) !== 'object') {
         console.log('[DayTrip] Error: Invalid location passed to createRoute()');
         return;
@@ -69,9 +67,7 @@ function createRoute(location) {
 
 function destroyRoute() {
 
-    // console.log('== [ROUTE] DESTROY ROUTE ==');
-
-    // If the user clicks Reset button before creating the route
+    // If the user clicks Reset button before creating the route.
     if (polyline.setPath === undefined) {
         console.log('[DayTrip] Error: unable to destroy route that doesn\'t exist.');
         return;
@@ -86,15 +82,16 @@ function destroyRoute() {
         _destroyMarker(i - 1);
     }
 
-    // Update info
+    // Update directions.
     _printDirections();
+
+    // Update elevations.
+    _printElevations();
 }
 
 function extendRoute(location) {
 
-    // console.log('== [ROUTE] EXTEND ROUTE ==');
-
-    // Argument sanity check.
+    // Check argument.
     if (!location || typeof(location) !== 'object') {
         console.log('[DayTrip] Error: Invalid location passed to extendRoute()');
         return;
@@ -105,27 +102,24 @@ function extendRoute(location) {
         waypoints   = [],
         result;
 
-    // Request routing to update map
+    // Request routing to update map.
     intent = 'draw';
     requestRoute(origin, destination, waypoints);
 }
 
 function truncateRoute() {
 
-    // console.log('== [ROUTE] TRUNCATE ROUTE ==');
-
-    // Remove a segment
+    // Remove the last segment from the route.
     _removeSegment();
 }
 
 function finishRoute() {
 
-    // console.log('== [ROUTE] FINISH ROUTE ==');
-
-    // Recalculate directions.
+    // Calculate directions.
     intent = 'direct';
     getDirections();
 
+    // Get elevation data for all points.
     requestElevation();
 }
 
@@ -139,9 +133,7 @@ function finishRoute() {
 
 function requestRoute(origin, destination, waypoints) {
 
-    // console.log('== [API] REQUEST ROUTE ==');
-
-    // Argument sanity checking.
+    // Check arguments.
     if (!origin || typeof(origin) !== 'object') {
         console.log('[DayTrip] Error: Invalid origin passed to getRoute()');
         return;
@@ -244,8 +236,6 @@ function handleRouteRequest(result, status) {
 
 function requestElevation() {
 
-    // console.log('== [API] REQUEST ELEVATION ==');
-
     if (!route.points || route.points.length === 0) {
         console.log('[DayTrip] Error: No points for getElevation()');
         return;
@@ -299,8 +289,6 @@ function handleElevationRequest(results, status) {
 
 function getDirections() {
 
-    // console.log('== [DIRECTIONS] GET DIRECTIONS ==');
-
     /*
        Google Maps API limit is 8 waypoints plus origin and destination. Lame.
        Below is a hack to make sure we aren't exceeding the API limit, but
@@ -336,16 +324,6 @@ function getDirections() {
 
 function _printDirections(result) {
 
-    // console.log('== [DIRECTIONS] _printDirections ==');
-
-    var leg,
-        steps,
-        origin,
-        destination,
-        totalDistance,
-        totalDuration,
-        directions;
-
     // If fewer than 2 points, reset everything.
     if (route.points.length < 2) {
         $('#route-overview').html('');
@@ -353,20 +331,21 @@ function _printDirections(result) {
         return;
     }
 
-    // Argument sanity check.
+    // Check argument.
     if (!result || typeof(result) !== 'object') {
         console.log('[DayTrip] Error: Invalid result passed to _printDirections()');
         return;
     }
 
     // Assumptions: only one route, only one leg.
-    leg           = result.routes[0].legs[0] || [];
-    origin        = leg['start_address']     || '';
-    destination   = leg['end_address']       || '';
-    totalDistance = leg['distance']['text']  || '';
-    totalDuration = leg['duration']['text']  || '';
-    steps         = leg['steps']             || [];
-    directions    = '';
+    var leg           = result.routes[0].legs[0] || [],
+        origin        = leg['start_address']     || '',
+        destination   = leg['end_address']       || '',
+        totalDistance = leg['distance']['text']  || '',
+        totalDuration = leg['duration']['text']  || '',
+        steps         = leg['steps']             || [],
+        directions    = '';
+
 
     // Build turn-by-turn directions.
     for (var s = 0, slen = steps.length; s < slen; s++) {
@@ -390,9 +369,13 @@ function _printDirections(result) {
 
 function _printElevations(results) {
 
-    // console.log('== _printElevations() ==');
+    // If fewer than 2 points, reset everything.
+    if (route.points.length < 2) {
+        $('#elevation-overview').html('');
+        return;
+    }
 
-    // Argument sanity check.
+    // Check argument.
     if (!results || typeof(results) !== 'object') {
         console.log('[DayTrip] Error: Invalid results passed to _printElevations()');
         return;
@@ -452,7 +435,7 @@ function _printElevations(results) {
 
 function _addSegment(result) {
 
-    // Argument sanity check.
+    // Check argument.
     if (!result || typeof(result) !== 'object') {
         console.log('[DayTrip] Error: Invalid result passed to _addSegment()');
         return;
@@ -517,13 +500,13 @@ function _removeSegment() {
 
 function _createMarker(location) {
 
-    // Argument sanity check.
+    // Check argument.
     if (!location || typeof(location) !== 'object') {
         console.log('[DayTrip] Error: Invalid location passed to _createMarker()');
         return;
     }
 
-    // Draw a marker at the provided location.
+    // Create a marker at the provided location and draw it on the map.
     var marker = new google.maps.Marker({
             position: location,
             map: map
@@ -535,7 +518,7 @@ function _createMarker(location) {
 
 function _destroyMarker(index) {
 
-    // Argument sanity check.
+    // Check argument.
     if (index === undefined || typeof(index) !== 'number' || route.markers[index] === undefined) {
         console.log('[DayTrip] Error: Invalid index passed to _destroyMarker()');
         return;
@@ -544,13 +527,13 @@ function _destroyMarker(index) {
     // Erase this marker from the map.
     _eraseMarker(index);
 
-    // Remove this marker from the route data.
+    // Remove this marker's data from the route.
     route.markers.splice(index, 1);
 }
 
 function _drawMarker(index) {
 
-    // Argument sanity check.
+    // Check argument.
     if (index === undefined || typeof(index) !== 'number' || route.markers[index] === undefined) {
         console.log('[DayTrip] Error: Invalid index passed to _drawMarker()');
         return;
@@ -562,7 +545,7 @@ function _drawMarker(index) {
 
 function _eraseMarker(index) {
 
-    // Argument sanity check.
+    // Check argument.
     if (index === undefined || typeof(index) !== 'number' || route.markers[index] === undefined) {
         console.log('[DayTrip] Error: Invalid index passed to _eraseMarker()');
         return;
@@ -587,26 +570,27 @@ function __LOG(caller) {
 }
 
 function metersToFeet(meters) {
-    
+
     return (3.28084 * meters);
 }
 
 /**
- * init()
+ * INITIALIZATION
  */
 
 function init() {
 
     console.log('== INIT ==');
 
-    var arboretum = [42.29871, -71.12783];
-    var massadona = [40.25275, -108.64038];
-    var castro    = [37.762, -122.435];
+    // Sample starter points, for convenience.
+    var arboretum = [ 42.29871, -71.12783  ],
+        massadona = [ 40.25275, -108.64038 ],
+        castro    = [ 37.762,   -122.435   ];
 
-    // Set map center
+    // Set map center.
     mapOptions['center'] = new google.maps.LatLng(castro[0],castro[1]);
 
-    // Assign map to HTML element
+    // Assign map to HTML element.
     map = new google.maps.Map($map.get(0), mapOptions);
 
     // Kick off controls
@@ -623,7 +607,7 @@ function init() {
     });
 
     // On click
-    google.maps.event.addListener(map, "click", function(event) {
+    google.maps.event.addListener(map, 'click', function(event) {
 
         var location = event.latLng || '';
 
