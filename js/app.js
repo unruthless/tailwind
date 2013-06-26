@@ -14,7 +14,7 @@ var map,
         },
     intent = '', // only way (for now) to pass intent into handleRoute callback :/ 
     mapOptions = {
-            zoom: 15,
+            zoom: 14,
             mapTypeId: google.maps.MapTypeId.TERRAIN,
             mapTypeControl: true,
             mapTypeControlOptions: {
@@ -91,6 +91,9 @@ function destroyRoute() {
 
     // Update elevations.
     renderElevations();
+
+    // Update weather.
+    renderWeather();
 }
 
 function extendRoute(location) {
@@ -492,6 +495,20 @@ function requestWeather(requestType) {
 
 function renderWeather(data, location) {
 
+    // If fewer than 2 points, reset everything.
+    if (route.points.length < 2) {
+        $('#weather-hourly').html('');
+        return;
+    }
+
+    // Check arguments
+    if (!data || typeof(data) !== 'object') {
+        console.log('[DayTrip] Error: Invalid data passed to renderWeather()');
+        return;
+    }
+
+    var location = location || 'unknown location';
+
     console.log('== Rendering weather for the next 12 hours at ' + location + ' ==');
 
     var time,
@@ -524,7 +541,6 @@ function renderWeather(data, location) {
 
     // Output all the things.
     $("#weather-hourly").html(html);
-
 }
 
 /**
