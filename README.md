@@ -1,13 +1,28 @@
-APIs:
+DayTrip
+=======
 
-Google Maps API
-https://developers.google.com/maps/documentation/javascript/
+Easier planning for better riding.
 
-Google Directions API
-https://developers.google.com/maps/documentation/directions/
+DayTrip helps you streamline your route planning before your next all-day bicycle ride.
 
-Google Elevation API
-https://developers.google.com/maps/documentation/elevation/
+Riders, use this unified interface to draw your route, instantly see where (and how big) the climbs are, get turn-by-turn directions, and get a heads-up about the heat, humidity, and headwinds you may encounter along the way.
+
+
+Data
+----
+
+DayTrip consumes data from the following services:
+
+* Google Maps v3 API: https://developers.google.com/maps/documentation/javascript/
+* Google Directions API: https://developers.google.com/maps/documentation/directions/
+* Google Elevation API: https://developers.google.com/maps/documentation/elevation/
+* Weather Underground API: http://www.wunderground.com/weather/api/
+
+
+Notes
+-----
+
+(The following are running developer notes; will be removed before official release.)
 
 Google Chart API
 https://developers.google.com/chart/
@@ -21,18 +36,3 @@ http://www.geonames.org/export/
 
 Add markers to polyline at regular intervals:
 http://stackoverflow.com/questions/2698112/how-to-add-markers-on-google-maps-polylines-based-on-distance-along-the-line
-
-GOAL:
-Spend less time planning, more time riding.
-How?
-Streamline route planning prior to the day's ride.
-
-GOAL:
-Allow the user to draw a route on a map.
-As each new point is added, draw the route between it and the previous point by sticking to roads.
-As each new point is added, calculate and show the total distance.
-As each new waypoint is added, calculate and show the elevation profile.
-Allow the user to save a route.
-Show the user turn-by-turn directions.
-
-
