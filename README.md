@@ -1,9 +1,9 @@
-DayTrip
+Tailwind
 =======
 
 Easier planning for better riding.
 
-DayTrip helps you streamline your route planning before your next all-day bicycle ride.
+Tailwind helps you streamline your route planning before your next all-day bicycle ride.
 
 Riders, use this unified interface to draw your route, instantly see where (and how big) the climbs are, get turn-by-turn directions, and get a heads-up about the heat, humidity, and headwinds you may encounter along the way.
 
@@ -11,7 +11,7 @@ Riders, use this unified interface to draw your route, instantly see where (and 
 Data
 ----
 
-DayTrip consumes data from the following services:
+Tailwind consumes data from the following services:
 
 * Google Maps v3 API: https://developers.google.com/maps/documentation/javascript/
 * Google Directions API: https://developers.google.com/maps/documentation/directions/

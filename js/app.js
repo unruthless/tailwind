@@ -54,7 +54,7 @@ function createRoute(location) {
 
     // Check argument.
     if (!location || typeof(location) !== 'object') {
-        console.log('[DayTrip] Error: Invalid location passed to createRoute()');
+        console.log('[Tailwind] Error: Invalid location passed to createRoute()');
         return;
     }
 
@@ -73,7 +73,7 @@ function destroyRoute() {
 
     // If the user clicks Reset button before creating the route.
     if (polyline.setPath === undefined) {
-        console.log('[DayTrip] Error: unable to destroy route that doesn\'t exist.');
+        console.log('[Tailwind] Error: unable to destroy route that doesn\'t exist.');
         return;
     }
 
@@ -100,7 +100,7 @@ function extendRoute(location) {
 
     // Check argument.
     if (!location || typeof(location) !== 'object') {
-        console.log('[DayTrip] Error: Invalid location passed to extendRoute()');
+        console.log('[Tailwind] Error: Invalid location passed to extendRoute()');
         return;
     }
 
@@ -137,17 +137,17 @@ function requestRoute(origin, destination, waypoints) {
 
     // Check arguments.
     if (!origin || typeof(origin) !== 'object') {
-        console.log('[DayTrip] Error: Invalid origin passed to getRoute()');
+        console.log('[Tailwind] Error: Invalid origin passed to getRoute()');
         return;
     }
 
     if (!destination || typeof(destination) !== 'object') {
-        console.log('[DayTrip] Error: Invalid destination passed to getRoute()');
+        console.log('[Tailwind] Error: Invalid destination passed to getRoute()');
         return;
     }
 
     if (!intent || (intent !== 'draw' && intent !== 'direct')) {
-        console.log('[DayTrip] Error: Invalid intent within getRoute()');
+        console.log('[Tailwind] Error: Invalid intent within getRoute()');
         return;
     }
 
@@ -186,7 +186,7 @@ function handleRouteRequest(result, status) {
 
             } else {
 
-                console.log('[DayTrip] Error: bad value for `intent`:', intent);
+                console.log('[Tailwind] Error: bad value for `intent`:', intent);
 
             }
 
@@ -194,32 +194,32 @@ function handleRouteRequest(result, status) {
 
         case 'INVALID_REQUEST':
             // If we get this error, check everything in routeOptions.
-            console.log('[DayTrip] Google Directions API error code ' + status + ': The DirectionsRequest provided was invalid.');
+            console.log('[Tailwind] Google Directions API error code ' + status + ': The DirectionsRequest provided was invalid.');
             break;
 
         case 'MAX_WAYPOINTS_EXCEEDED':
             // The getDirections() function should prevent this error.
-            console.log('[DayTrip] Google Directions API error code ' + status + ': Too many DirectionsWaypoints were provided in the DirectionsRequest. The total allowed waypoints is 8, plus the origin and destination. Maps API for Business customers are allowed 23 waypoints, plus the origin, and destination.');
+            console.log('[Tailwind] Google Directions API error code ' + status + ': Too many DirectionsWaypoints were provided in the DirectionsRequest. The total allowed waypoints is 8, plus the origin and destination. Maps API for Business customers are allowed 23 waypoints, plus the origin, and destination.');
             break;
 
         case 'NOT_FOUND':
             // If we get this error, check origin, destination, and all of the points in waypoints.
-            console.log('[DayTrip] Google Directions API error code ' + status + ': At least one of the origin, destination, or waypoints could not be geocoded.');
+            console.log('[Tailwind] Google Directions API error code ' + status + ': At least one of the origin, destination, or waypoints could not be geocoded.');
             break;
 
         case 'OVER_QUERY_LIMIT':
             // If we get this error, kill the app.
-            console.log('[DayTrip] Google Directions API error code ' + status + ': The webpage has gone over the requests limit in too short a period of time.');
+            console.log('[Tailwind] Google Directions API error code ' + status + ': The webpage has gone over the requests limit in too short a period of time.');
             break;
 
         case 'REQUEST_DENIED':
             // If we get this error, check the settings where I got the API key.
-            console.log('[DayTrip] Google Directions API error code ' + status + ': The webpage is not allowed to use the directions service.');
+            console.log('[Tailwind] Google Directions API error code ' + status + ': The webpage is not allowed to use the directions service.');
             break;
 
         case 'UNKNOWN_ERROR':
             // If we get this error, wait a tick, then try the request again some fixed number of times.
-            console.log('[DayTrip] Google Directions API error code ' + status + ': A directions request could not be processed due to a server error. The request may succeed if you try again.');
+            console.log('[Tailwind] Google Directions API error code ' + status + ': A directions request could not be processed due to a server error. The request may succeed if you try again.');
             break;
 
         case 'ZERO_RESULTS':
@@ -227,11 +227,11 @@ function handleRouteRequest(result, status) {
             // If they are, a few possibilities:
             //  - switch to the MapQuest API that uses openstreetmap data: http://open.mapquestapi.com/directions/
             //  - switch to walking directions and avoid highways.
-            console.log('[DayTrip] Google Directions API error code ' + status + ': No route could be found between the origin and destination.');
+            console.log('[Tailwind] Google Directions API error code ' + status + ': No route could be found between the origin and destination.');
             break;
 
         default:
-            console.log('[DayTrip] The Google Directions API has returned an unknown status code:', status);
+            console.log('[Tailwind] The Google Directions API has returned an unknown status code:', status);
             break;
     }
 }
@@ -288,7 +288,7 @@ function renderDirections(result) {
 
     // Check argument.
     if (!result || typeof(result) !== 'object') {
-        console.log('[DayTrip] Error: Invalid result passed to renderDirections()');
+        console.log('[Tailwind] Error: Invalid result passed to renderDirections()');
         return;
     }
 
@@ -327,7 +327,7 @@ function renderDirections(result) {
 function requestElevations() {
 
     if (!route.points || route.points.length === 0) {
-        console.log('[DayTrip] Error: No points for getElevation()');
+        console.log('[Tailwind] Error: No points for getElevation()');
         return;
     }
 
@@ -350,23 +350,23 @@ function handleElevationsRequest(results, status) {
             break;
 
         case 'INVALID_REQUEST':
-            console.log('[DayTrip] Google Elevation API error code ' + status + ': The API request was malformed.');
+            console.log('[Tailwind] Google Elevation API error code ' + status + ': The API request was malformed.');
             break;
 
         case 'OVER_QUERY_LIMIT':
-            console.log('[DayTrip] Google Elevation API error code ' + status + ': The requestor has exceeded quota.');
+            console.log('[Tailwind] Google Elevation API error code ' + status + ': The requestor has exceeded quota.');
             break;
 
         case 'REQUEST_DENIED':
-            console.log('[DayTrip] Google Elevation API error code ' + status + ': The API did not complete the request.');
+            console.log('[Tailwind] Google Elevation API error code ' + status + ': The API did not complete the request.');
             break;
 
         case 'UNKNOWN_ERROR':
-            console.log('[DayTrip] Google Elevation API error code ' + status + ': An elevation request could not be processed due to a server error. The request may succeed if you try again.');
+            console.log('[Tailwind] Google Elevation API error code ' + status + ': An elevation request could not be processed due to a server error. The request may succeed if you try again.');
             break;
 
         default:
-            console.log('[DayTrip] The Google Elevation API has returned an unknown status code:', status);
+            console.log('[Tailwind] The Google Elevation API has returned an unknown status code:', status);
             break;
     }
 }
@@ -381,7 +381,7 @@ function renderElevations(results) {
 
     // Check argument.
     if (!results || typeof(results) !== 'object') {
-        console.log('[DayTrip] Error: Invalid results passed to renderElevations()');
+        console.log('[Tailwind] Error: Invalid results passed to renderElevations()');
         return;
     }
 
@@ -458,14 +458,14 @@ function requestWeather(requestType) {
 
                 // Check for error response from Weather Underground
                 if (data.response.error !== undefined) {
-                    console.log('[DayTrip] Weather Underground API error: ' + data.response.error.type + ' (' + data.response.error.description + ')');
+                    console.log('[Tailwind] Weather Underground API error: ' + data.response.error.type + ' (' + data.response.error.description + ')');
                     return;
                 }
 
                 renderWeather(data, 'origin');
             },
             error: function() {
-                console.log('[DayTrip] There was an error contacting the Weather Underground API.');
+                console.log('[Tailwind] There was an error contacting the Weather Underground API.');
                 return;
             }
         },
@@ -476,14 +476,14 @@ function requestWeather(requestType) {
 
                 // Check for error response from Weather Underground
                 if (data.response.error !== undefined) {
-                    console.log('[DayTrip] Weather Underground API error: ' + data.response.error.type + ' (' + data.response.error.description + ')');
+                    console.log('[Tailwind] Weather Underground API error: ' + data.response.error.type + ' (' + data.response.error.description + ')');
                     return;
                 }
 
                 renderWeather(data, 'destination');
             },
             error: function() {
-                console.log('[DayTrip] There was an error contacting the Weather Underground API.');
+                console.log('[Tailwind] There was an error contacting the Weather Underground API.');
                 return;
             }
         };
@@ -503,7 +503,7 @@ function renderWeather(data, location) {
 
     // Check arguments
     if (!data || typeof(data) !== 'object') {
-        console.log('[DayTrip] Error: Invalid data passed to renderWeather()');
+        console.log('[Tailwind] Error: Invalid data passed to renderWeather()');
         return;
     }
 
@@ -553,7 +553,7 @@ function addSegment(result) {
 
     // Check argument.
     if (!result || typeof(result) !== 'object') {
-        console.log('[DayTrip] Error: Invalid result passed to addSegment()');
+        console.log('[Tailwind] Error: Invalid result passed to addSegment()');
         return;
     }
 
@@ -618,7 +618,7 @@ function createMarker(location) {
 
     // Check argument.
     if (!location || typeof(location) !== 'object') {
-        console.log('[DayTrip] Error: Invalid location passed to createMarker()');
+        console.log('[Tailwind] Error: Invalid location passed to createMarker()');
         return;
     }
 
@@ -636,7 +636,7 @@ function destroyMarker(index) {
 
     // Check argument.
     if (index === undefined || typeof(index) !== 'number' || route.markers[index] === undefined) {
-        console.log('[DayTrip] Error: Invalid index passed to destroyMarker()');
+        console.log('[Tailwind] Error: Invalid index passed to destroyMarker()');
         return;
     }
 
@@ -651,7 +651,7 @@ function drawMarker(index) {
 
     // Check argument.
     if (index === undefined || typeof(index) !== 'number' || route.markers[index] === undefined) {
-        console.log('[DayTrip] Error: Invalid index passed to drawMarker()');
+        console.log('[Tailwind] Error: Invalid index passed to drawMarker()');
         return;
     }
 
@@ -663,7 +663,7 @@ function eraseMarker(index) {
 
     // Check argument.
     if (index === undefined || typeof(index) !== 'number' || route.markers[index] === undefined) {
-        console.log('[DayTrip] Error: Invalid index passed to eraseMarker()');
+        console.log('[Tailwind] Error: Invalid index passed to eraseMarker()');
         return;
     }
 
