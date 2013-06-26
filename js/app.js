@@ -35,8 +35,9 @@ var map,
     AVOID_HIGHWAYS     = true,
     OPTIMIZE_WAYPOINTS = false,
     PROVIDE_ROUTE_ALTERNATIVES = false,
-    DIRECTIONS_SERVICE = new google.maps.DirectionsService(),
-    ELEVATION_SERVICE  = new google.maps.ElevationService();
+    DIRECTIONS_SERVICE = new google.maps.DirectionsService(), // using Google Maps Directions API
+    ELEVATION_SERVICE  = new google.maps.ElevationService(),  // using Google Maps Elevation API
+    WEATHER_SERVICE_KEY = 'ba53b8ecbdb1972c';                 // using Weather Underground API
 
 /**
  * ROUTE METHODS
@@ -44,6 +45,9 @@ var map,
  * {method} destroyRoute
  * {method} extendRoute
  * {method} truncateRoute
+ * {method} finishRoute
+ * {method} requestRoute
+ * {method} handleRouteRequest
  */
 
 function createRoute(location) {
@@ -55,7 +59,7 @@ function createRoute(location) {
     }
 
     // Create a marker at the clicked location.
-    _createMarker(location);
+    createMarker(location);
 
     // Set the clicked location to be the first point on the route.
     route.points.push(location);
@@ -79,14 +83,14 @@ function destroyRoute() {
 
     // Remove the markers and underlying marker data.
     for (var i = route.markers.length; i > 0; i--) {
-        _destroyMarker(i - 1);
+        destroyMarker(i - 1);
     }
 
     // Update directions.
-    _printDirections();
+    renderDirections();
 
     // Update elevations.
-    _printElevations();
+    renderElevations();
 }
 
 function extendRoute(location) {
@@ -110,26 +114,21 @@ function extendRoute(location) {
 function truncateRoute() {
 
     // Remove the last segment from the route.
-    _removeSegment();
+    removeSegment();
 }
 
 function finishRoute() {
 
-    // Calculate directions.
+    // Calculate directions for the route.
     intent = 'direct';
     getDirections();
 
-    // Get elevation data for all points.
-    requestElevation();
-}
+    // Get elevation data for all points on the route.
+    requestElevations();
 
-/**
- * API METHODS
- * {method} requestRoute
- * {method} handleRouteRequest
- * {method} requestElevation
- * {method} handleElevationRequest
- */
+    // Get weather along the route.
+    requestWeather();
+}
 
 function requestRoute(origin, destination, waypoints) {
 
@@ -176,11 +175,11 @@ function handleRouteRequest(result, status) {
 
             if (intent === 'draw') {
 
-                _addSegment(result);
+                addSegment(result);
 
             } else if (intent === 'direct') {
 
-                _printDirections(result);
+                renderDirections(result);
 
             } else {
 
@@ -234,58 +233,11 @@ function handleRouteRequest(result, status) {
     }
 }
 
-function requestElevation() {
-
-    if (!route.points || route.points.length === 0) {
-        console.log('[DayTrip] Error: No points for getElevation()');
-        return;
-    }
-
-    var data = {
-        locations: route.points
-    };
-
-    // S'up, Google.
-    ELEVATION_SERVICE.getElevationForLocations(data, handleElevationRequest);
-}
-
-function handleElevationRequest(results, status) {
-
-    console.log('== [API] HANDLE ELEVATION REQUEST ==');
-
-    switch (status) {
-
-        case 'OK':
-            _printElevations(results);
-            break;
-
-        case 'INVALID_REQUEST':
-            console.log('[DayTrip] Google Elevation API error code ' + status + ': The API request was malformed.');
-            break;
-
-        case 'OVER_QUERY_LIMIT':
-            console.log('[DayTrip] Google Elevation API error code ' + status + ': The requestor has exceeded quota.');
-            break;
-
-        case 'REQUEST_DENIED':
-            console.log('[DayTrip] Google Elevation API error code ' + status + ': The API did not complete the request.');
-            break;
-
-        case 'UNKNOWN_ERROR':
-            console.log('[DayTrip] Google Elevation API error code ' + status + ': An elevation request could not be processed due to a server error. The request may succeed if you try again.');
-            break;
-
-        default:
-            console.log('[DayTrip] The Google Elevation API has returned an unknown status code:', status);
-            break;
-    }
-}
-
 /**
  * DIRECTIONS METHODS
  * {method} getDirections
- * {method} _printDirections
- */
+ * {method} renderDirections
+ */ 
 
 function getDirections() {
 
@@ -322,7 +274,7 @@ function getDirections() {
     requestRoute(origin, destination, waypoints);
 }
 
-function _printDirections(result) {
+function renderDirections(result) {
 
     // If fewer than 2 points, reset everything.
     if (route.points.length < 2) {
@@ -333,7 +285,7 @@ function _printDirections(result) {
 
     // Check argument.
     if (!result || typeof(result) !== 'object') {
-        console.log('[DayTrip] Error: Invalid result passed to _printDirections()');
+        console.log('[DayTrip] Error: Invalid result passed to renderDirections()');
         return;
     }
 
@@ -363,11 +315,60 @@ function _printDirections(result) {
 }
 
 /**
- * ELEVATIONS METHODS
- * {method} _printElevations
- */ 
+ * ELEVATION METHODS
+ * {method} requestElevations
+ * {method} handleElevationsRequest
+ * {method} renderElevations
+ */
 
-function _printElevations(results) {
+function requestElevations() {
+
+    if (!route.points || route.points.length === 0) {
+        console.log('[DayTrip] Error: No points for getElevation()');
+        return;
+    }
+
+    var data = {
+        locations: route.points
+    };
+
+    // S'up, Google.
+    ELEVATION_SERVICE.getElevationForLocations(data, handleElevationsRequest);
+}
+
+function handleElevationsRequest(results, status) {
+
+    console.log('== [API] HANDLE ELEVATION REQUEST ==');
+
+    switch (status) {
+
+        case 'OK':
+            renderElevations(results);
+            break;
+
+        case 'INVALID_REQUEST':
+            console.log('[DayTrip] Google Elevation API error code ' + status + ': The API request was malformed.');
+            break;
+
+        case 'OVER_QUERY_LIMIT':
+            console.log('[DayTrip] Google Elevation API error code ' + status + ': The requestor has exceeded quota.');
+            break;
+
+        case 'REQUEST_DENIED':
+            console.log('[DayTrip] Google Elevation API error code ' + status + ': The API did not complete the request.');
+            break;
+
+        case 'UNKNOWN_ERROR':
+            console.log('[DayTrip] Google Elevation API error code ' + status + ': An elevation request could not be processed due to a server error. The request may succeed if you try again.');
+            break;
+
+        default:
+            console.log('[DayTrip] The Google Elevation API has returned an unknown status code:', status);
+            break;
+    }
+}
+
+function renderElevations(results) {
 
     // If fewer than 2 points, reset everything.
     if (route.points.length < 2) {
@@ -377,7 +378,7 @@ function _printElevations(results) {
 
     // Check argument.
     if (!results || typeof(results) !== 'object') {
-        console.log('[DayTrip] Error: Invalid results passed to _printElevations()');
+        console.log('[DayTrip] Error: Invalid results passed to renderElevations()');
         return;
     }
 
@@ -404,8 +405,8 @@ function _printElevations(results) {
     }
 
     // Convert to feet.
-    ascentFeet = metersToFeet(ascentMeters);
-    descentFeet = metersToFeet(descentMeters);
+    ascentFeet = __metersToFeet(ascentMeters);
+    descentFeet = __metersToFeet(descentMeters);
 
     // Calculate net elevation change.
     netDeltaMeters = ascentMeters - descentMeters;
@@ -428,16 +429,115 @@ function _printElevations(results) {
 }
 
 /**
- * SEGMENT METHODS
- * {method} _addSegment
- * {method} _removeSegment
+ * WEATHER METHODS
+ * {method} requestWeather
+ * {method} handleWeatherRequestError
+ * {method} handleWeatherRequestSuccess
+ * {method} renderWeather
  */
 
-function _addSegment(result) {
+function requestWeather(requestType) {
+
+    console.log('== [API] REQUEST WEATHER ==');
+
+    var origin = {
+            lat: route.points[0].lat(),
+            lng: route.points[0].lng()
+        },
+        destination = {
+            lat: route.points[route.points.length - 1].lat(),
+            lng: route.points[route.points.length - 1].lng()
+        },
+        originSettings = {
+            url: "http://api.wunderground.com/api/ba53b8ecbdb1972c/hourly/geolookup/conditions/q/" + origin.lat + "," + origin.lng + ".json",
+            dataType: "jsonp",
+            success: function(data) {
+
+                // Check for error response from Weather Underground
+                if (data.response.error !== undefined) {
+                    console.log('[DayTrip] Weather Underground API error: ' + data.response.error.type + ' (' + data.response.error.description + ')');
+                    return;
+                }
+
+                renderWeather(data, 'origin');
+            },
+            error: function() {
+                console.log('[DayTrip] There was an error contacting the Weather Underground API.');
+                return;
+            }
+        },
+        destinationSettings = {
+            url: "http://api.wunderground.com/api/ba53b8ecbdb1972c/hourly/geolookup/conditions/q/" + destination.lat + "," + destination.lng + ".json",
+            dataType: "jsonp",
+            success: function(data) {
+
+                // Check for error response from Weather Underground
+                if (data.response.error !== undefined) {
+                    console.log('[DayTrip] Weather Underground API error: ' + data.response.error.type + ' (' + data.response.error.description + ')');
+                    return;
+                }
+
+                renderWeather(data, 'destination');
+            },
+            error: function() {
+                console.log('[DayTrip] There was an error contacting the Weather Underground API.');
+                return;
+            }
+        };
+
+    // S'up, Weather Underground.
+    $.ajax(originSettings);
+    $.ajax(destinationSettings);
+}
+
+function renderWeather(data, location) {
+
+    console.log('== Rendering weather for the next 12 hours at ' + location + ' ==');
+
+    var time,
+        humidity,
+        temp_f,
+        temp_c,
+        wind_degrees,
+        wind_direction,
+        wind_speed_mph,
+        wind_speed_kph,
+        html = '';
+
+    for (var i = 0, len = 12; i < len; i++) {
+
+        time            = data.hourly_forecast[i]['FCTTIME']['weekday_name_abbrev'] + ' ' + data.hourly_forecast[i]['FCTTIME']['civil'];
+        humidity        = data.hourly_forecast[i]['humidity'];
+        temp_f          = data.hourly_forecast[i]['temp']['english'];
+        temp_c          = data.hourly_forecast[i]['temp']['metric'];
+        wind_degrees    = data.hourly_forecast[i]['wdir']['degrees'];
+        wind_direction  = data.hourly_forecast[i]['wdir']['dir'];
+        wind_speed_mph  = data.hourly_forecast[i]['wspd']['english'];
+        wind_speed_kph  = data.hourly_forecast[i]['wspd']['metric'];
+
+        // Imperial
+        html += '<p>' + time + ' | ' + humidity + '% humidity | ' + temp_f + 'ºF | Wind ' + wind_speed_mph + 'mph from the ' + wind_direction + ' (' + wind_degrees + 'º)</p>';
+
+        // Metric
+        //console.log(time, '|', humidity, '% humidity |', temp_c, 'ºC | Wind', wind_speed_kph, 'kph from the', wind_direction, '(', wind_degrees, 'º)');
+    }
+
+    // Output all the things.
+    $("#weather-hourly").html(html);
+
+}
+
+/**
+ * SEGMENT METHODS
+ * {method} addSegment
+ * {method} removeSegment
+ */
+
+function addSegment(result) {
 
     // Check argument.
     if (!result || typeof(result) !== 'object') {
-        console.log('[DayTrip] Error: Invalid result passed to _addSegment()');
+        console.log('[DayTrip] Error: Invalid result passed to addSegment()');
         return;
     }
 
@@ -446,7 +546,7 @@ function _addSegment(result) {
 
     // If the route contains more than one point, erase the old final point's marker.
     if (route.points.length > 1) {
-        _eraseMarker(route.markers.length - 1);
+        eraseMarker(route.markers.length - 1);
     }
 
     // Cache the number of points in this segment.
@@ -456,13 +556,13 @@ function _addSegment(result) {
     route.points = route.points.concat(segment);
 
     // Place a marker at the new final point.
-    _createMarker(route.points[route.points.length - 1]);
+    createMarker(route.points[route.points.length - 1]);
 
     // Redraw the polyline on the map.
     polyline.setPath(route.points);
 }
 
-function _removeSegment() {
+function removeSegment() {
 
     // If no segments to remove, reset the route.
     if (route.segments.length === 0) {
@@ -473,11 +573,11 @@ function _removeSegment() {
     var pointsToRemove = route.segments[route.segments.length - 1];
 
     // Destroy the last marker in the marker's array.
-    _destroyMarker(route.markers.length - 1);
+    destroyMarker(route.markers.length - 1);
 
     // If the route still contains more than one point, draw a marker at the new last point.
     if (route.points.length > 1) {
-        _drawMarker(route.markers.length - 1);
+        drawMarker(route.markers.length - 1);
     }
 
     // Delete the last segment's data.
@@ -492,17 +592,17 @@ function _removeSegment() {
 
 /**
  * MARKER METHODS
- * {method} _createMarker
- * {method} _destroyMarker
- * {method} _drawMarker
- * {method} _eraseMarker
+ * {method} createMarker
+ * {method} destroyMarker
+ * {method} drawMarker
+ * {method} eraseMarker
  */
 
-function _createMarker(location) {
+function createMarker(location) {
 
     // Check argument.
     if (!location || typeof(location) !== 'object') {
-        console.log('[DayTrip] Error: Invalid location passed to _createMarker()');
+        console.log('[DayTrip] Error: Invalid location passed to createMarker()');
         return;
     }
 
@@ -516,26 +616,26 @@ function _createMarker(location) {
     route.markers.push(marker);
 }
 
-function _destroyMarker(index) {
+function destroyMarker(index) {
 
     // Check argument.
     if (index === undefined || typeof(index) !== 'number' || route.markers[index] === undefined) {
-        console.log('[DayTrip] Error: Invalid index passed to _destroyMarker()');
+        console.log('[DayTrip] Error: Invalid index passed to destroyMarker()');
         return;
     }
 
     // Erase this marker from the map.
-    _eraseMarker(index);
+    eraseMarker(index);
 
     // Remove this marker's data from the route.
     route.markers.splice(index, 1);
 }
 
-function _drawMarker(index) {
+function drawMarker(index) {
 
     // Check argument.
     if (index === undefined || typeof(index) !== 'number' || route.markers[index] === undefined) {
-        console.log('[DayTrip] Error: Invalid index passed to _drawMarker()');
+        console.log('[DayTrip] Error: Invalid index passed to drawMarker()');
         return;
     }
 
@@ -543,11 +643,11 @@ function _drawMarker(index) {
     route.markers[index].setMap(map);
 }
 
-function _eraseMarker(index) {
+function eraseMarker(index) {
 
     // Check argument.
     if (index === undefined || typeof(index) !== 'number' || route.markers[index] === undefined) {
-        console.log('[DayTrip] Error: Invalid index passed to _eraseMarker()');
+        console.log('[DayTrip] Error: Invalid index passed to eraseMarker()');
         return;
     }
 
@@ -558,7 +658,7 @@ function _eraseMarker(index) {
 /**
  * UTILITIES
  * {method} __LOG
- * {method} metersToFeet
+ * {method} __metersToFeet
  */
 
 function __LOG(caller) {
@@ -569,7 +669,7 @@ function __LOG(caller) {
     console.log('intent',intent);
 }
 
-function metersToFeet(meters) {
+function __metersToFeet(meters) {
 
     return (3.28084 * meters);
 }
@@ -588,7 +688,7 @@ function init() {
         castro    = [ 37.762,   -122.435   ];
 
     // Set map center.
-    mapOptions['center'] = new google.maps.LatLng(castro[0],castro[1]);
+    mapOptions['center'] = new google.maps.LatLng(arboretum[0],arboretum[1]);
 
     // Assign map to HTML element.
     map = new google.maps.Map($map.get(0), mapOptions);
