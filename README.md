@@ -13,11 +13,21 @@ Data
 
 Tailwind consumes data from the following services:
 
-* Google Maps v3 API: https://developers.google.com/maps/documentation/javascript/
-* Google Directions API: https://developers.google.com/maps/documentation/directions/
-* Google Elevation API: https://developers.google.com/maps/documentation/elevation/
-* Weather Underground API: http://www.wunderground.com/weather/api/
+* Google Maps v3 API:
+  [documentation] https://developers.google.com/maps/documentation/javascript/
+  [rate limiting] 25000 map loads per day
 
+* Google Directions API:
+  [documentation] https://developers.google.com/maps/documentation/directions/
+  [rate limiting] ?
+
+* Google Elevation API
+  [documentation] https://developers.google.com/maps/documentation/elevation/
+  [rate limiting] 2500 requests/day
+
+* Weather Underground API
+  [documentation] http://www.wunderground.com/weather/api/
+  [rate limiting] 500 requests/day, 10 requests/minute
 
 Notes
 -----
