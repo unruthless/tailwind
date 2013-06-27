@@ -46,3 +46,15 @@ http://www.geonames.org/export/
 
 Add markers to polyline at regular intervals:
 http://stackoverflow.com/questions/2698112/how-to-add-markers-on-google-maps-polylines-based-on-distance-along-the-line
+
+OpenLayers, possible alternative to Google Maps API:
+http://openlayers.org/
+
+OpenWeatherMap API, possible alternative to Weather Underground:
+http://openweathermap.org/API
+
+MapQuest API, possible alternative to Google Maps API:
+http://developer.mapquest.com/
+
+Leaflet.JS for mobile-friendly maps:
+http://leafletjs.com/
