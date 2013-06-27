@@ -9,29 +9,37 @@
     </head>
     <body>
         <div id="canvas"></div>
-        <div id="panels">
-            <div class="panel controls">
-                <button class="control" id="control-finish">Finish Route</button>
-                <button class="control" id="control-undo">Step Back</button>
-                <button class="control" id="control-reset">Reset Route</button>
+        <div id="controls">
+            <button class="control" id="control-finish">Finish Route</button>
+            <button class="control" id="control-undo">Step Back</button>
+            <button class="control" id="control-reset">Reset Route</button>
+        </div>
+        <div id="elevation">
+            <h3 class="inset-heading">Elevation</h3>
+            <div class="inset-content">
+                <div id="elevation-overview">Click 'Finish Route' to show the elevation changes for your ride.</div>
+                <div id="elevation-profile" class="todo">@todo elevation profile</div>
             </div>
+        </div>
+        <div id="results">
             <div class="panel route">
                 <h3 class="panel-heading">Route</h3>
-                <div id="route-overview"></div>
-                <div id="route-directions"></div>
-            </div>
-            <div class="panel elevation">
-                <h3 class="panel-heading">Elevation Profile</h3>
-                <div id="elevation-overview"></div>
-                <div id="elevation-profile"></div>
+                <div class="panel-content">
+                    <div id="route-overview"></div>
+                    <div id="route-directions">Click 'Finish Route' to generate turn-by-turn directions.</div>
+                </div>
             </div>
             <div class="panel weather">
                 <h3 class="panel-heading">Weather &amp; Wind</h3>
-                <div id="weather-hourly"></div>
+                <div class="panel-content">
+                    <div id="weather-hourly">Click 'Finish Route' to show the weather forecast for your ride.</div>
+                </div>
             </div>
             <div class="panel services">
                 <h3 class="panel-heading">Roadside Services</h3>
-                <p>@todo</p>
+                <div class="panel-content">
+                    <div id="services-listing" class="todo">@todo services listing</div>
+                </div>
             </div>
         </div>
         <script type="text/javascript" src="js/zepto.min.js"></script>

@@ -1,3 +1,5 @@
+'use strict';
+
 var map,
     $map = $("#canvas"),
     polyline = {},
@@ -19,24 +21,25 @@ var map,
             mapTypeControl: true,
             mapTypeControlOptions: {
                 style: google.maps.MapTypeControlStyle.HORIZONTAL_BAR,
-                position: google.maps.ControlPosition.RIGHT_TOP
+                position: google.maps.ControlPosition.TOP_LEFT
             },
             panControl: true,
             panControlOptions: {
-                position: google.maps.ControlPosition.RIGHT_CENTER
+                position: google.maps.ControlPosition.LEFT_TOP
             },
             zoomControl: true,
             zoomControlOptions: {
-                position: google.maps.ControlPosition.RIGHT_CENTER
+                position: google.maps.ControlPosition.LEFT_TOP,
+                style: google.maps.ZoomControlStyle.SMALL
             }
         },
-    TRAVEL_MODE        = google.maps.DirectionsTravelMode.BICYCLING,
-    UNIT_SYSTEM        = google.maps.UnitSystem.METRIC,
-    AVOID_HIGHWAYS     = true,
-    OPTIMIZE_WAYPOINTS = false,
+    TRAVEL_MODE         = google.maps.DirectionsTravelMode.BICYCLING,
+    UNIT_SYSTEM         = google.maps.UnitSystem.METRIC,
+    AVOID_HIGHWAYS      = true,
+    OPTIMIZE_WAYPOINTS  = false,
     PROVIDE_ROUTE_ALTERNATIVES = false,
-    DIRECTIONS_SERVICE = new google.maps.DirectionsService(), // using Google Maps Directions API
-    ELEVATION_SERVICE  = new google.maps.ElevationService(),  // using Google Maps Elevation API
+    DIRECTIONS_SERVICE  = new google.maps.DirectionsService(), // using Google Maps Directions API
+    ELEVATION_SERVICE   = new google.maps.ElevationService(),  // using Google Maps Elevation API
     WEATHER_SERVICE_KEY = 'ba53b8ecbdb1972c';                 // using Weather Underground API
 
 /**
@@ -704,7 +707,7 @@ function init() {
         castro    = [ 37.762,   -122.435   ];
 
     // Set map center.
-    mapOptions['center'] = new google.maps.LatLng(arboretum[0],arboretum[1]);
+    mapOptions['center'] = new google.maps.LatLng(castro[0],castro[1]);
 
     // Assign map to HTML element.
     map = new google.maps.Map($map.get(0), mapOptions);
