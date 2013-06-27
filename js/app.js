@@ -2,11 +2,16 @@
 
 var map,
     $map = $("#canvas"),
-    polyline = {},
-    controls = {
+    map_controls = {
             $reset:  $('#control-reset'),
             $undo:   $('#control-undo'),
             $finish: $('#control-finish')
+        },
+    mode_controls = {
+            $metric: $('#mode-distance-metric'),
+            $imperial: $('#mode-distance-imperial'),
+            $fahrenheit: $('#mode-temperature-f'),
+            $celcius: $('#mode-temperature-c')
         },
     route = {
             points:   [],
@@ -14,6 +19,7 @@ var map,
             markers:  [],
             data:     []
         },
+    polyline = {},
     intent = '', // only way (for now) to pass intent into handleRoute callback :/ 
     mapOptions = {
             zoom: 14,
@@ -34,13 +40,64 @@ var map,
             }
         },
     TRAVEL_MODE         = google.maps.DirectionsTravelMode.BICYCLING,
-    UNIT_SYSTEM         = google.maps.UnitSystem.METRIC,
+    DISTANCE_UNITS      = google.maps.UnitSystem.IMPERIAL, // Distances in Imperial units by default
+    TEMPERATURE_UNITS   = 'F',                             // Temperatures in Fahrenheit by default
     AVOID_HIGHWAYS      = true,
     OPTIMIZE_WAYPOINTS  = false,
     PROVIDE_ROUTE_ALTERNATIVES = false,
     DIRECTIONS_SERVICE  = new google.maps.DirectionsService(), // using Google Maps Directions API
     ELEVATION_SERVICE   = new google.maps.ElevationService(),  // using Google Maps Elevation API
-    WEATHER_SERVICE_KEY = 'ba53b8ecbdb1972c';                 // using Weather Underground API
+    WEATHER_SERVICE_KEY = 'ba53b8ecbdb1972c';                  // using Weather Underground API
+
+/**
+ * MODE METHODS
+ * {method} setDistanceUnits
+ * {method} setTemperatureUnits
+ */
+
+function setDistanceUnits(units) {
+
+    if (!units) {
+        console.log('[Tailwind] Error: Invalid units passed to setDistanceUnits()');
+        return;
+    }
+
+    if (units === 'metric') {
+        DISTANCE_UNITS = google.maps.UnitSystem.METRIC;
+    }
+
+    if (units === 'imperial') {
+        DISTANCE_UNITS = google.maps.UnitSystem.IMPERIAL;
+    }
+
+    // Recalculate and re-render directions for the route.
+    intent = 'direct';
+    getDirections();
+
+    // Recalculate and re-render elevation data for all points on the route.
+    requestElevations();
+}
+
+
+function setTemperatureUnits(units) {
+
+    if (!units) {
+        console.log('[Tailwind] Error: Invalid units passed to setTemperatureUnits()');
+        return;
+    }
+
+    if (units === 'f') {
+        TEMPERATURE_UNITS = 'F';
+    }
+
+    if (units === 'c') {
+        TEMPERATURE_UNITS = 'C';
+    }
+
+    // Re-render weather along the route.
+    requestWeather();
+}
+
 
 /**
  * ROUTE METHODS
@@ -158,7 +215,7 @@ function requestRoute(origin, destination, waypoints) {
             origin:                   origin,
             destination:              destination,
             travelMode:               TRAVEL_MODE,
-            unitSystem:               UNIT_SYSTEM,
+            unitSystem:               DISTANCE_UNITS,
             avoidHighways:            AVOID_HIGHWAYS,
             optimizeWaypoints:        OPTIMIZE_WAYPOINTS,
             provideRouteAlternatives: PROVIDE_ROUTE_ALTERNATIVES
@@ -388,50 +445,62 @@ function renderElevations(results) {
         return;
     }
 
-    var deltaMeters     = 0,
-        netDeltaMeters  = 0,
-        netDeltaFeet    = 0,
-        ascentMeters    = 0,
-        ascentFeet      = 0,
-        descentMeters   = 0,
-        descentFeet     = 0;
+    var delta_metric   = 0,
+        ascent_metric  = 0,
+        descent_metric = 0,
+        delta,
+        ascent,
+        descent,
+        unit_singular = '',
+        unit_plural   = '';
 
     for (var r = 0, rlen = results.length; r < rlen; r++) {
 
         if (r + 1 < rlen) {
             
-            deltaMeters = (results[r + 1]['elevation'] - results[r]['elevation']);
+            delta_metric = (results[r + 1]['elevation'] - results[r]['elevation']);
             
-            if (deltaMeters < 0) {
-                descentMeters += Math.abs(deltaMeters);
+            if (delta_metric < 0) {
+                descent_metric += Math.abs(delta_metric);
             } else {
-                ascentMeters += deltaMeters;
+                ascent_metric += delta_metric;
             }
         }
     }
 
-    // Convert to feet.
-    ascentFeet = __metersToFeet(ascentMeters);
-    descentFeet = __metersToFeet(descentMeters);
+    if (DISTANCE_UNITS === google.maps.UnitSystem.IMPERIAL) {
 
-    // Calculate net elevation change.
-    netDeltaMeters = ascentMeters - descentMeters;
-    netDeltaFeet = ascentFeet - descentFeet;
+        // Imperial
+        ascent = __metersToFeet(ascent_metric);
+        descent = __metersToFeet(descent_metric);
+        unit_singular = 'foot';
+        unit_plural = 'feet';
+
+    } else {
+
+        // Default to metric
+        ascent = ascent_metric;
+        descent = descent_metric;
+        unit_singular = 'meter';
+        unit_plural = 'meters';
+
+    }
+
+    // Calculate net change
+    delta = ascent - descent;
 
     // Round to nearest unit and stringify.
-    ascentMeters = Math.floor(ascentMeters).toString();
-    descentMeters = Math.floor(descentMeters).toString();
-    ascentFeet = Math.floor(ascentFeet).toString();
-    descentFeet = Math.floor(descentFeet).toString();
-    netDeltaMeters = Math.floor(netDeltaMeters).toString();
-    netDeltaFeet = Math.floor(netDeltaFeet).toString();
+    ascent  = Math.floor(ascent).toString();
+    descent = Math.floor(descent).toString();
+    delta   = Math.floor(delta).toString();
+
+    // Set unit string.
+    ascent  = (ascent  === '1') ? (ascent  + ' ' + unit_singular) : (ascent  + ' ' + unit_plural);
+    descent = (descent === '1') ? (descent + ' ' + unit_singular) : (descent + ' ' + unit_singular);
+    delta   = (delta   === '1') ? (delta   + ' ' + unit_singular) : (delta   + ' ' + unit_plural);
 
     // Output all the things.
-    $('#elevation-overview').html('<p>'
-        + ascentMeters   + ' meters (' + ascentFeet   + ' feet) total climb.<br>'
-        + descentMeters  + ' meters (' + descentFeet  + ' feet) total drop.<br>'
-        + netDeltaMeters + ' meters (' + netDeltaFeet + ' feet) overall elevation change.'
-        + '</p>');
+    $('#elevation-overview').html('<p>' + ascent  + ' total climb, ' + descent + ' total drop, ' + delta   + ' net elevation change.</p>');
 }
 
 /**
@@ -442,7 +511,7 @@ function renderElevations(results) {
  * {method} renderWeather
  */
 
-function requestWeather(requestType) {
+function requestWeather() {
 
     console.log('== [API] REQUEST WEATHER ==');
 
@@ -512,22 +581,24 @@ function renderWeather(data, location) {
 
     var location = location || 'unknown location';
 
-    console.log('== Rendering weather for the next 12 hours at ' + location + ' ==');
+    // console.log('== Rendering weather for the next 12 hours at ' + location + ' ==');
 
     var time,
         humidity,
+        temp,
         temp_f,
         temp_c,
         wind_degrees,
         wind_direction,
+        wind_speed,
         wind_speed_mph,
         wind_speed_kph,
         html = '';
 
-    for (var i = 0, len = 12; i < len; i++) {
+    for (var i = 0, len = 4; i < len; i++) {
 
         time            = data.hourly_forecast[i]['FCTTIME']['weekday_name_abbrev'] + ' ' + data.hourly_forecast[i]['FCTTIME']['civil'];
-        humidity        = data.hourly_forecast[i]['humidity'];
+        humidity        = data.hourly_forecast[i]['humidity'] + '% humidity';
         temp_f          = data.hourly_forecast[i]['temp']['english'];
         temp_c          = data.hourly_forecast[i]['temp']['metric'];
         wind_degrees    = data.hourly_forecast[i]['wdir']['degrees'];
@@ -535,11 +606,16 @@ function renderWeather(data, location) {
         wind_speed_mph  = data.hourly_forecast[i]['wspd']['english'];
         wind_speed_kph  = data.hourly_forecast[i]['wspd']['metric'];
 
-        // Imperial
-        html += '<p>' + time + ' | ' + humidity + '% humidity | ' + temp_f + 'ºF | Wind ' + wind_speed_mph + 'mph from the ' + wind_direction + ' (' + wind_degrees + 'º)</p>';
+        temp = (TEMPERATURE_UNITS === 'F') ? (temp_f + '&deg;F') : (temp_c + '&deg;C');
 
-        // Metric
-        //console.log(time, '|', humidity, '% humidity |', temp_c, 'ºC | Wind', wind_speed_kph, 'kph from the', wind_direction, '(', wind_degrees, 'º)');
+        wind_speed = (DISTANCE_UNITS === google.maps.UnitSystem.IMPERIAL) ? (wind_speed_mph + 'mph') : (wind_speed_kph + 'kph');
+
+        html += '<p>' + time + ' | ' + humidity + ' | ' + temp + ' | Wind ' + wind_speed + ' from the ' + wind_direction + ' (' + wind_degrees + '&deg;)</p>';
+
+        console.log('TEMPERATURE_UNITS',TEMPERATURE_UNITS);
+        console.log('DISTANCE_UNITS',DISTANCE_UNITS, google.maps.UnitSystem.IMPERIAL);
+        console.log(temp);
+        console.log(wind_speed);
     }
 
     // Output all the things.
@@ -712,17 +788,34 @@ function init() {
     // Assign map to HTML element.
     map = new google.maps.Map($map.get(0), mapOptions);
 
-    // Kick off controls
-    controls.$reset.on('click', function(event) {
+    // Kick off map controls
+    map_controls.$reset.on('click', function(event) {
         destroyRoute();
     });
 
-    controls.$undo.on('click', function(event) {
+    map_controls.$undo.on('click', function(event) {
         truncateRoute();
     });
 
-    controls.$finish.on('click', function(event) {
+    map_controls.$finish.on('click', function(event) {
         finishRoute();
+    });
+
+    // Kick off mode controls
+    mode_controls.$metric.on('click', function(event) {
+        setDistanceUnits('metric');
+    });
+
+    mode_controls.$imperial.on('click', function(event) {
+        setDistanceUnits('imperial');
+    });
+
+    mode_controls.$fahrenheit.on('click', function(event) {
+        setTemperatureUnits('f');
+    });
+
+    mode_controls.$celcius.on('click', function(event) {
+        setTemperatureUnits('c');
     });
 
     // On click

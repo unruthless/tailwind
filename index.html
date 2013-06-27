@@ -23,20 +23,34 @@
         </div>
         <div id="results">
             <div class="panel route">
-                <h3 class="panel-heading">Route</h3>
+                <h3 class="panel-heading">
+                    Route
+                    <div class="modes">
+                        <button class="mode" id="mode-distance-imperial">Feet</button>
+                        <button class="mode" id="mode-distance-metric">Meters</button>
+                    </div>
+                </h3>
                 <div class="panel-content">
                     <div id="route-overview"></div>
                     <div id="route-directions">Click 'Finish Route' to generate turn-by-turn directions.</div>
                 </div>
             </div>
             <div class="panel weather">
-                <h3 class="panel-heading">Weather &amp; Wind</h3>
+                <h3 class="panel-heading">
+                    Conditions
+                    <div class="modes">
+                        <button class="mode" id="mode-temperature-f">&deg;F</button>
+                        <button class="mode" id="mode-temperature-c">&deg;C</button>
+                    </div>
+                </h3>
                 <div class="panel-content">
                     <div id="weather-hourly">Click 'Finish Route' to show the weather forecast for your ride.</div>
                 </div>
             </div>
             <div class="panel services">
-                <h3 class="panel-heading">Roadside Services</h3>
+                <h3 class="panel-heading">
+                    Services
+                </h3>
                 <div class="panel-content">
                     <div id="services-listing" class="todo">@todo services listing</div>
                 </div>
