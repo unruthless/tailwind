@@ -8,10 +8,22 @@ body {
     padding: 0;
 }
 
+.todo {
+    color: #F00;
+}
+
+.clear {
+    clear: both;
+}
+
+/* === Map Canvas ====================================== */
+
 #canvas {
     height: 100%;
     width: 100%;
 }
+
+/* === Map Controls ==================================== */
 
 #controls {
     position: fixed;
@@ -39,13 +51,15 @@ body {
     border: 1px solid rgb(113, 123, 135);
 }
 
+/* === Elevation ======================================= */
+
 #elevation {
     position: fixed;
     top: 47px;
     right: 5px;
     width: 400px;
     height: 200px;
-    background: rgba(255,255,255,0.5);
+    background: rgba(255,255,255,0.9);
     border: 1px solid rgb(113, 123, 135);
     -webkit-box-shadow: inset rgba(0, 0, 0, 0.4) 0px 2px 4px 0px;
     -moz-box-shadow: inset rgba(0, 0, 0, 0.4) 0px 2px 4px 0px;
@@ -60,6 +74,8 @@ body {
     color: rgba(113, 123, 135, 0.5);
     text-align: center;
 }
+
+/* === Results Panels ================================== */
 
 #results {
     position: fixed;
@@ -107,15 +123,11 @@ body {
     padding: 6px;
 }
 
+#results .panel .panel-heading .modes .mode:hover {
+    background: #999;
+}
+
 #results .panel .panel-content {
     font-size: 0.75em;
     padding: 0.5em 5% 0.5em 5%;
-}
-
-.todo {
-    color: #F00;
-}
-
-.clear {
-    clear: both;
 }

@@ -515,6 +515,12 @@ function requestWeather() {
 
     console.log('== [API] REQUEST WEATHER ==');
 
+    // Make sure that there is at least one point on the route
+    if (!route.points || route.points.length === 0) {
+        console.log('[Tailwind] Error: No points for requestWeather()');
+        return;
+    }
+
     var origin = {
             lat: route.points[0].lat(),
             lng: route.points[0].lng()
@@ -611,11 +617,6 @@ function renderWeather(data, location) {
         wind_speed = (DISTANCE_UNITS === google.maps.UnitSystem.IMPERIAL) ? (wind_speed_mph + 'mph') : (wind_speed_kph + 'kph');
 
         html += '<p>' + time + ' | ' + humidity + ' | ' + temp + ' | Wind ' + wind_speed + ' from the ' + wind_direction + ' (' + wind_degrees + '&deg;)</p>';
-
-        console.log('TEMPERATURE_UNITS',TEMPERATURE_UNITS);
-        console.log('DISTANCE_UNITS',DISTANCE_UNITS, google.maps.UnitSystem.IMPERIAL);
-        console.log(temp);
-        console.log(wind_speed);
     }
 
     // Output all the things.
