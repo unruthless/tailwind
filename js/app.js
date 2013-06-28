@@ -14,10 +14,10 @@ var map,
             $celcius: $('#mode-temperature-c')
         },
     route = {
-            points:   [],
-            segments: [],
-            markers:  [],
-            data:     []
+            points:     [],
+            segments:   [],
+            markers:    [],
+            elevations: []
         },
     polyline = {},
     intent = '', // only way (for now) to pass intent into handleRoute callback :/ 
@@ -407,6 +407,7 @@ function handleElevationsRequest(results, status) {
 
         case 'OK':
             renderElevations(results);
+            renderElevationProfile(results);
             break;
 
         case 'INVALID_REQUEST':
@@ -501,6 +502,61 @@ function renderElevations(results) {
 
     // Output all the things.
     $('#elevation-overview').html('<p>' + ascent  + ' total climb, ' + descent + ' total drop, ' + delta   + ' net elevation change.</p>');
+}
+
+function renderElevationProfile(results) {
+
+    console.log('Drawing elevation profile');
+
+    // If fewer than 2 points, destroy the profile.
+    if (route.points.length < 2) {
+        $('#elevation-profile').html('');
+        return;
+    }
+
+    // Check argument.
+    if (!results || typeof(results) !== 'object') {
+        console.log('[Tailwind] Error: Invalid results passed to renderElevations()');
+        return;
+    }
+
+    /*
+
+    Data will need to look like
+    [
+        {
+            latlng: {},
+            elevation: #,
+            x_delta: #,
+            y_delta: #,
+            grade: #
+        },
+        ...
+    ]
+
+    Example, with wrong data:
+    =============================================================================================
+    Index | latlng                            | elevation | x_delta | y_delta  | grade
+          | object                            | meters    | meters  | meters   | %
+    ---------------------------------------------------------------------------------------------
+    0     | { lat: 42.29871, lng: -71.12783 } | 0         | 0       | 0        | 0
+    1     | { lat: 42.29871, lng: -71.12783 } | 10        | 100     | 10       | 10
+    2     | { lat: 42.29871, lng: -71.12783 } | 50        | 150     | 40       | 26.6
+    3     | { lat: 42.29871, lng: -71.12783 } | 40        | 300     | -10      | -3.3
+    4     | { lat: 42.29871, lng: -71.12783 } | 30        | 500     | -10      | -2
+    =============================================================================================
+
+    for (var p = 0, plen = route.points.length; p < plen; p++) {
+        
+    }
+
+    x_delta = google.maps.geometry.spherical.computeDistanceBetween(this.latlng, last.latlng);
+
+    y_delta = this.elevation - prev.elevation;
+
+    grade = (this.x_delta !== 0) ? 100 * (this.y_delta / this.x_delta) : 0; // guard against division by zero
+
+    */
 }
 
 /**

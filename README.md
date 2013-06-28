@@ -58,3 +58,13 @@ http://developer.mapquest.com/
 
 Leaflet.JS for mobile-friendly maps:
 http://leafletjs.com/
+
+Basis for elevation profile:
+http://bl.ocks.org/mbostock/3883195
+
+If appending routes together, elevation data will need to be normalized.
+Perhaps something like this:
+http://bl.ocks.org/mbostock/1667367
+
+How to calculate distance between two points:
+http://stackoverflow.com/questions/1502590/calculate-distance-between-two-points-in-google-maps-v3
