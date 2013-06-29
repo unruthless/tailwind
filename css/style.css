@@ -75,15 +75,14 @@ body {
     text-align: center;
 }
 
-#elevation #elevation-profile .axis path,
-#elevation #elevation-profile .axis line {
-    fill: none;
-    stroke: #000;
-    shape-rendering: crispEdges;
+#elevation .inset-content {
+    position: relative;
+    overflow: auto;
 }
 
-#elevation #elevation-profile .area {
-    fill: steelblue;
+#elevation .inset-content #elevation-profile {
+    width: 400px;
+    height: 200px;
 }
 
 /* === Results Panels ================================== */

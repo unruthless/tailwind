@@ -381,6 +381,8 @@ function renderDirections(result) {
  * ELEVATION METHODS
  * {method} requestElevations
  * {method} handleElevationsRequest
+ * {method} logElevations
+ * {method} renderProfile
  * {method} renderElevations
  */
 
@@ -406,8 +408,7 @@ function handleElevationsRequest(results, status) {
     switch (status) {
 
         case 'OK':
-            renderElevations(results);
-            renderElevationProfile(results);
+            logElevations(results);
             break;
 
         case 'INVALID_REQUEST':
@@ -430,6 +431,83 @@ function handleElevationsRequest(results, status) {
             console.log('[Tailwind] The Google Elevation API has returned an unknown status code:', status);
             break;
     }
+}
+
+function logElevations(results) {
+
+    // If fewer than 2 points, don't log anything.
+    if (route.points.length < 2) {
+        return;
+    }
+
+    // Check argument.
+    if (!results || typeof(results) !== 'object') {
+        console.log('[Tailwind] Error: Invalid results passed to logElevations()');
+        return;
+    }
+
+    var latlng    = {},
+        elevation = 0,
+        x_delta   = 0,
+        y_delta   = 0,
+        distance  = 0,
+        grade     = 0;
+
+    for (var p = 0, plen = route.points.length; p < plen; p++) {
+
+        latlng = route.points[p];
+
+        elevation = results[p]['elevation'];
+
+        if (p > 0) {
+            x_delta = google.maps.geometry.spherical.computeDistanceBetween(route.points[p], route.points[p - 1]);
+            y_delta = results[p]['elevation'] - results[p - 1]['elevation'];
+        }
+
+        distance += x_delta;
+
+        grade = (x_delta !== 0) ? 100 * (y_delta / x_delta) : 0;
+
+        route.elevations[p] = {
+            'latlng'    : latlng,
+            'elevation' : elevation,
+            'x_delta'   : x_delta,
+            'y_delta'   : y_delta,
+            'distance'  : distance,
+            'grade'     : grade
+        }
+    }
+
+    renderProfile();
+    renderElevations(results);
+}
+
+function renderProfile() {
+    
+    var w   = parseFloat($("#elevation-profile").css('width').replace('px',''), 10) || 0,
+        h   = parseFloat($("#elevation-profile").css('height').replace('px',''), 10) || 0,
+        gap = 1,
+        svg = d3.select("#elevation-profile")
+                .append("svg")
+                .attr("width", w)
+                .attr("height", h);
+
+    svg.selectAll("rect")
+        .data(route.elevations)
+        .enter()
+        .append("rect")
+        .attr("x", function(d, i) {
+            return i * (w / route.elevations.length);
+        })
+        .attr("y", function(d, i) {
+            return h - d["elevation"];
+        })
+        .attr("width", function(d, i) {
+            return w / route.elevations.length - gap;
+        })
+        .attr("height", function(d, i) {
+            return d["elevation"];
+        });
 }
 
 function renderElevations(results) {
@@ -490,6 +568,7 @@ function renderElevations(results) {
     // Calculate net change
     delta = ascent - descent;
 
+
     // Round to nearest unit and stringify.
     ascent  = Math.floor(ascent).toString();
     descent = Math.floor(descent).toString();
@@ -502,61 +581,6 @@ function renderElevations(results) {
 
     // Output all the things.
     $('#elevation-overview').html('<p>' + ascent  + ' total climb, ' + descent + ' total drop, ' + delta   + ' net elevation change.</p>');
-}
-
-function renderElevationProfile(results) {
-
-    console.log('Drawing elevation profile');
-
-    // If fewer than 2 points, destroy the profile.
-    if (route.points.length < 2) {
-        $('#elevation-profile').html('');
-        return;
-    }
-
-    // Check argument.
-    if (!results || typeof(results) !== 'object') {
-        console.log('[Tailwind] Error: Invalid results passed to renderElevations()');
-        return;
-    }
-
-    /*
-
-    Data will need to look like
-    [
-        {
-            latlng: {},
-            elevation: #,
-            x_delta: #,
-            y_delta: #,
-            grade: #
-        },
-        ...
-    ]
-
-    Example, with wrong data:
-    =============================================================================================
-    Index | latlng                            | elevation | x_delta | y_delta  | grade
-          | object                            | meters    | meters  | meters   | %
-    ---------------------------------------------------------------------------------------------
-    0     | { lat: 42.29871, lng: -71.12783 } | 0         | 0       | 0        | 0
-    1     | { lat: 42.29871, lng: -71.12783 } | 10        | 100     | 10       | 10
-    2     | { lat: 42.29871, lng: -71.12783 } | 50        | 150     | 40       | 26.6
-    3     | { lat: 42.29871, lng: -71.12783 } | 40        | 300     | -10      | -3.3
-    4     | { lat: 42.29871, lng: -71.12783 } | 30        | 500     | -10      | -2
-    =============================================================================================
-
-    for (var p = 0, plen = route.points.length; p < plen; p++) {
-        
-    }
-
-    x_delta = google.maps.geometry.spherical.computeDistanceBetween(this.latlng, last.latlng);
-
-    y_delta = this.elevation - prev.elevation;
-
-    grade = (this.x_delta !== 0) ? 100 * (this.y_delta / this.x_delta) : 0; // guard against division by zero
-
-    */
 }
 
 /**
