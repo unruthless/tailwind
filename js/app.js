@@ -483,7 +483,7 @@ function logElevations(results) {
 }
 
 function renderProfile() {
-    
+
     var w   = parseFloat($("#elevation-profile").css('width').replace('px',''), 10) || 0,
         h   = parseFloat($("#elevation-profile").css('height').replace('px',''), 10) || 0,
         gap = 1,
@@ -507,7 +507,8 @@ function renderProfile() {
         })
         .attr("height", function(d, i) {
             return d["elevation"];
-        });
+        })
+        .attr("fill", "blue");;
 }
 
 function renderElevations(results) {
