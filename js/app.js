@@ -52,7 +52,7 @@ var tailwind = function(){
         WEATHER_SERVICE_KEY = 'ba53b8ecbdb1972c';                  // using Weather Underground API
 
     /**
-     * MODES
+     * UNITS & CONVERSIONS
      */
 
     function _setDistanceUnits(units) {
@@ -110,6 +110,11 @@ var tailwind = function(){
 
         // Re-render weather along the route.
         _requestWeather();
+    }
+
+    function __metersToFeet(meters) {
+
+        return (3.28084 * meters);
     }
 
     /**
@@ -319,11 +324,14 @@ var tailwind = function(){
         // var line   = result.routes[0].overview_polyline.points || '',
         //     points = google.maps.geometry.encoding.decodePath(line); 
 
-        var points = result.routes[0].overview_path || [],
-            length = points.length || 0,
-            segment = {
-                'points' : points,
-                'length' : length
+        var points     = result['routes'][0]['overview_path']                || [],
+            distance   = result['routes'][0]['legs'][0]['duration']['value'] || 0,
+            directions = result['routes'][0]['legs'][0]['steps']             || [],
+            segment    = {
+                'points'     : points,
+                'distance'   : distance,
+                'directions' : directions,
+                'elevations' : _requestElevations(points)
             };
 
         // If the route contains more than one point, erase the old final point's marker.
@@ -335,7 +343,7 @@ var tailwind = function(){
         route.segments.push(segment);
 
         // Append this segment's points to the route.
-        route.points = route.points.concat(points);
+        route.points = route.points.concat(segment.points);
 
         // Place a marker at the new final point.
         _createMarker(route.points[route.points.length - 1]);
@@ -515,16 +523,20 @@ var tailwind = function(){
      * ELEVATIONS
      */
 
-    function _requestElevations() {
+    function _requestElevations(points) {
 
-        if (!route.points || route.points.length === 0) {
+        console.log('requesting elevations for', points.length, 'points');
+
+        if (!points || points.length === 0) {
             console.log('[Tailwind] Error: No points for _getElevation()');
             return;
         }
 
         var data = {
-            locations: route.points
+            locations: points
         };
+
+        // BUG: http://stackoverflow.com/questions/11420176/elevation-service-unknown-error
 
         // S'up, Google.
         ELEVATION_SERVICE.getElevationForLocations(data, _handleElevationsRequest);
@@ -564,8 +576,10 @@ var tailwind = function(){
 
     function _logElevations(results) {
 
+        console.log('logging elevations');
+
         // If fewer than 2 points, don't log anything.
-        if (route.points.length < 2) {
+        if (points.length < 2) {
             return;
         }
 
@@ -582,7 +596,12 @@ var tailwind = function(){
             distance  = 0,
             grade     = 0;
 
-        for (var p = 0, plen = route.points.length; p < plen; p++) {
+        var last_seg_index = route['segments'].length - 1,
+            last_seg = route['segments'][last_seg_index];
+
+        console.log(last_seg_index, last_seg);
+
+        for (var p = 0, plen = last_seg; p < plen; p++) {
 
             latlng = route.points[p];
 
@@ -832,23 +851,6 @@ var tailwind = function(){
     }
 
     /**
-     * UTILITIES
-     */
-
-    function __LOG(caller) {
-        console.log('LOG FROM', caller);
-        console.log('route.points\n',route.points,'\nroute.points.length\n',route.points.length);
-        console.log('route.segments\n',route.segments,'\nroute.segments.length\n',route.segments.length);
-        console.log('route.markers\n',route.markers,'\nroute.markers.length\n',route.markers.length);
-        console.log('intent\n',intent);
-    }
-
-    function __metersToFeet(meters) {
-
-        return (3.28084 * meters);
-    }
-
-    /**
      * INITIALIZATION
      */
 
@@ -912,7 +914,8 @@ var tailwind = function(){
     }
 
     return {
-      blow: _init
+      blow: _init,
+      route: route
     }
 
 }();
