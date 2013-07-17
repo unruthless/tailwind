@@ -4,7 +4,9 @@ Help make Tailwind better! I welcome contributions of code, design, content, doc
 
 ## How to contribute
 
-### 1. Create a [GitHub account](https://github.com/signup/free) if you don't already have one, and log in.
+### 1. Create a GitHub account if you don't already have one, and log in.
+
+* Here's the [signup link](https://github.com/signup/free).
 
 ### 2. Submit an [issue ticket](https://github.com/unruthless/tailwind/issues) for your issue:
 
@@ -14,11 +16,11 @@ Help make Tailwind better! I welcome contributions of code, design, content, doc
 
 ### 3. Contribute a patch:
 
-* On GitHub, fork [this repository](https://www.github.com/unruthless/tailwind) (we'll refer to this repository as `upstream`). Your fork (which we'll refer to as `origin`) will live on GitHub at https://www.github.com/[YOUR GITHUB USERNAME]/tailwind.
+* On GitHub, [fork this repository](https://www.github.com/unruthless/tailwind) (we'll refer to this repository, the one at `https://www.github.com/unruthless/tailwind`, as `upstream`). Your fork (which we'll refer to as `origin`) will live on GitHub at `https://www.github.com/[YOUR GITHUB USERNAME]/tailwind`.
 * Clone `origin` onto your computer to create your `working copy` of this repository.
-* In your working copy, create a new branch based on master for your patch. Call this patch branch something like `patch--my-shiny-new-feature` or `patch--browser-crash`. The exact name doesn't matter, but try to make it descriptive.
-* Check out your patch branch, and make your changes. Please stick to the existing coding style, and make sure that your commits have descriptive messages.
-* When you're all done, push your `patch` branch back up to `origin` on GitHub, find the issue ticket in `upstream` that your patch addresses, and submit a pull request against that ticket. I'll review it and either merge it in or suggest changes.
+* In your working copy, create a new branch based on master for your patch. Call this patch branch something like `patch--my-shiny-new-feature` or `patch--browser-crash`. The exact name doesn't matter; just try to make it descriptive.
+* Check out your patch branch, and make your changes. Please stick to Tailwind's existing coding style, and make sure that any incremental commits have descriptive messages.
+* When you're all done, push your patch branch back up to `origin` on GitHub, find the issue ticket in `upstream` that your patch addresses, and submit a pull request against that ticket. I'll review it and either merge it in or suggest changes.
 * Give yourself a high five for contributing to an open source project!
 
 * [General GitHub documentation](http://help.github.com/)
