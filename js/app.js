@@ -578,17 +578,6 @@ var tailwind = function(){
 
         console.log('logging elevations');
 
-        // If fewer than 2 points, don't log anything.
-        if (points.length < 2) {
-            return;
-        }
-
-        // Check argument.
-        if (!results || typeof(results) !== 'object') {
-            console.log('[Tailwind] Error: Invalid results passed to logElevations()');
-            return;
-        }
-
         var latlng    = {},
             elevation = 0,
             x_delta   = 0,
@@ -600,6 +589,20 @@ var tailwind = function(){
             last_seg = route['segments'][last_seg_index];
 
         console.log(last_seg_index, last_seg);
+
+
+
+        // If fewer than 2 points, don't log anything.
+        if (points.length < 2) {
+            return;
+        }
+
+        // Check argument.
+        if (!results || typeof(results) !== 'object') {
+            console.log('[Tailwind] Error: Invalid results passed to logElevations()');
+            return;
+        }
+
 
         for (var p = 0, plen = last_seg; p < plen; p++) {
 
