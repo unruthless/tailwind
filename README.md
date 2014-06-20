@@ -1,7 +1,7 @@
-Tailwind
+Tailwinds
 =======
 
-<b>Planning a long bicycle ride? Use Tailwind to</b>
+<b>Planning a long bicycle ride? Use Tailwinds to</b>
 
 * draw your route
 * instantly see where (and how big) the climbs are
@@ -12,7 +12,7 @@ Tailwind
 Data Sources & Dependencies
 ----------------------------
 
-Tailwind consumes data from the following services.
+Tailwinds consumes data from the following services.
 If the listed limitations prove untenable, I've also listed alternative data sources.
 Eventually, it'd be nice to make these data sources interchangeable.
 
@@ -36,7 +36,7 @@ Eventually, it'd be nice to make these data sources interchangeable.
   * [Weather Underground API Documentation](http://www.wunderground.com/weather/api/)
   * Alternative: [OpenWeatherMap API](http://openweathermap.org/API)
 
-Tailwind uses the following JavaScript libraries:
+Tailwinds uses the following JavaScript libraries:
 
 1. D3.js for drawing the elevation profile.
   * Alternative: [Google Chart API](https://developers.google.com/chart/)

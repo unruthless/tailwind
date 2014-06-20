@@ -1,23 +1,23 @@
-# Tailwind <3 Contributors
+# Tailwinds <3 Contributors
 
-Help make Tailwind better! I welcome contributions of code, design, content, documentation, and anything else that would help improve this tool. Thank you in advance!
+Help make Tailwinds better! I welcome contributions of code, design, content, documentation, and anything else that would help improve this tool. Thank you in advance!
 
 ## HOW TO CONTRIBUTE (if you <b><i>don't</i></b> know git)
 
-A long time ago, someone sat me down for a few hours and showed me how to use this crazy git thang. (It was at a Whole Foods in Southern California, of all places. The coffeeshop next door was closed, and Whole Foods had free wifi.)
+A long time ago, @ginatrapani sat me down for a few hours and showed me how to use this crazy git thang.
 
 That afternoon's impromptu, hands-on lesson in version control was and remains one of the kindest and most helpful things anyone has ever done for me professionally.
 
 I'd like to pay it forward.
 
-<b>If you've never contributed to a project on GitHub before, and would like Tailwind to be your first:</b>
+<b>If you've never contributed to a project on GitHub before, and would like Tailwinds to be your first:</b>
 
 1. You are awesome.
 2. Read through the rest of this document to get an overview of the process - don't worry if parts don't make sense yet!
 3. Email me at ruthie@cyclingcoder.com or ping me on twitter at [@unruthless](https://www.twitter.com/unruthless), and we'll schedule a coffee or Skype session and go through the whole thing together.
 4. Seriously, you are awesome.
 
-## HOW TO CONTRIBUTE (if you <b><i>do</i></b> know git)
+## HOW TO CONTRIBUTE (if you already know git)
 
 ### 1. Create a GitHub account if you don't already have one, and log in.
 
