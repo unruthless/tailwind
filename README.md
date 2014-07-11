@@ -26,6 +26,7 @@ Eventually, it'd be nice to make these data sources interchangeable.
   * Refuses to give bicycle directions across international boundaries.
   * [Google Directions API Documentation](https://developers.google.com/maps/documentation/directions/)
   * Alternative: http://developer.mapquest.com/web/products/open/directions-service
+  * Interesting reading on routing engines: http://en.wikipedia.org/wiki/Dijkstra%27s_algorithm, http://algo2.iti.kit.edu/schultes/hwy/schultes_diss.pdf, http://www.youtube.com/watch?v=-0ErpE8tQbw
 
 3. Google Elevation API for elevation data along polyline.
   * Limited to 2500 requests per day.
