@@ -25,6 +25,7 @@ Eventually, it'd be nice to make these data sources interchangeable.
   * Limited to routes with 8 or fewer waypoints + origin & destination.
   * Refuses to give bicycle directions across international boundaries.
   * [Google Directions API Documentation](https://developers.google.com/maps/documentation/directions/)
+  * Alternative: http://developer.mapquest.com/web/products/open/directions-service
 
 3. Google Elevation API for elevation data along polyline.
   * Limited to 2500 requests per day.
